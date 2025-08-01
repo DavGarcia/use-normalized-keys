@@ -1,0 +1,39 @@
+{
+  "name": "use-normalized-keys-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for use-normalized-keys React hook library and documentation",
+  "workspaces": [
+    "packages/*",
+    "docs"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=packages/use-normalized-keys",
+    "build:all": "npm run build && npm run docs:build",
+    "dev": "npm run build --workspace=packages/use-normalized-keys -- --watch",
+    "docs:dev": "npm run dev --workspace=docs",
+    "docs:build": "npm run build --workspace=docs",
+    "docs:preview": "npm run preview --workspace=docs",
+    "clean": "npm run clean --workspaces --if-present",
+    "install:all": "npm install",
+    "test": "echo \"No tests specified yet\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "echo \"Prettier formatting will be configured in future phases\"",
+    "lint": "echo \"ESLint will be configured in future phases\""
+  },
+  "keywords": [
+    "react",
+    "hooks",
+    "keyboard",
+    "input",
+    "gaming",
+    "interactive",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

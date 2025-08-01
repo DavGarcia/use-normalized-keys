@@ -1,0 +1,49 @@
+# Source files
+src/
+
+# Demo and development files
+demo/
+demo.html
+interactive-demo.html
+test-browser.html
+test-server.js
+
+# Agent OS documentation
+.agent-os/
+
+# Development dependencies
+node_modules/
+
+# Build tools and configs
+vite.config.ts
+vitest.config.ts
+tsconfig.json
+
+# Test files and coverage
+*.test.*
+*.spec.*
+__tests__/
+coverage/
+
+# Development builds and artifacts
+dist/dev/
+*.log
+*.tgz
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env*
