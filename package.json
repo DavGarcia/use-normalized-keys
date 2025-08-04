@@ -16,7 +16,8 @@
     "docs:preview": "npm run preview --workspace=docs",
     "clean": "npm run clean --workspaces --if-present",
     "install:all": "npm install",
-    "test": "echo \"No tests specified yet\"",
+    "test": "npm run test --workspace=packages/use-normalized-keys",
+    "test:workspace": "node test-workspace.js",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "echo \"Prettier formatting will be configured in future phases\"",
     "lint": "echo \"ESLint will be configured in future phases\""
