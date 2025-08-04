@@ -2,39 +2,31 @@
   "name": "use-normalized-keys-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo for use-normalized-keys React hook library and documentation",
+  "description": "Monorepo for use-normalized-keys React hook and documentation",
+  "author": "David Garcia <dgarcia182@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/DavGarcia/use-normalized-keys#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DavGarcia/use-normalized-keys.git"
+  },
   "workspaces": [
     "packages/*",
     "docs"
   ],
   "scripts": {
     "build": "npm run build --workspace=packages/use-normalized-keys",
-    "build:all": "npm run build && npm run docs:build",
-    "dev": "npm run build --workspace=packages/use-normalized-keys -- --watch",
-    "docs:dev": "npm run dev --workspace=docs",
-    "docs:build": "npm run build --workspace=docs",
-    "docs:preview": "npm run preview --workspace=docs",
-    "clean": "npm run clean --workspaces --if-present",
-    "install:all": "npm install",
     "test": "npm run test --workspace=packages/use-normalized-keys",
-    "test:workspace": "node test-workspace.js",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "format": "echo \"Prettier formatting will be configured in future phases\"",
-    "lint": "echo \"ESLint will be configured in future phases\""
+    "test:watch": "npm run test:watch --workspace=packages/use-normalized-keys",
+    "test:coverage": "npm run test:coverage --workspace=packages/use-normalized-keys",
+    "demo": "npm run test:browser --workspace=packages/use-normalized-keys",
+    "dev": "npm run dev --workspace=packages/use-normalized-keys",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules docs/node_modules node_modules",
+    "reinstall": "npm run clean && npm install"
   },
-  "keywords": [
-    "react",
-    "hooks",
-    "keyboard",
-    "input",
-    "gaming",
-    "interactive",
-    "monorepo"
-  ],
-  "author": "",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": ""
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

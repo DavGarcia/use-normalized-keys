@@ -39,15 +39,15 @@
     "normalization",
     "cross-browser"
   ],
-  "author": "Daniel Garcia <daniel@buildermethods.com>",
+  "author": "David Garcia <dgarcia182@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/dgarcia102/use-normalized-keys#readme",
+  "homepage": "https://github.com/DavGarcia/use-normalized-keys#readme",
   "bugs": {
-    "url": "https://github.com/dgarcia102/use-normalized-keys/issues"
+    "url": "https://github.com/DavGarcia/use-normalized-keys/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dgarcia102/use-normalized-keys.git",
+    "url": "https://github.com/DavGarcia/use-normalized-keys.git",
     "directory": "packages/use-normalized-keys"
   },
   "peerDependencies": {
