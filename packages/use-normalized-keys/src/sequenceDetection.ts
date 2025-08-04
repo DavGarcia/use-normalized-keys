@@ -118,6 +118,7 @@ export interface SequenceState {
   
   // Hold detection
   heldKeys: Map<string, { startTime: number; event: NormalizedKeyEvent }>;
+  holdTimers: Map<string, NodeJS.Timeout>; // Track active hold timers
   
   // Match history (optional, for debugging)
   recentMatches: MatchedSequence[];
@@ -149,6 +150,7 @@ export function createSequenceState(options: SequenceOptions = {}): SequenceStat
     chordStartTime: null,
     chordMatched: false,
     heldKeys: new Map(),
+    holdTimers: new Map(),
     recentMatches: [],
     options: { ...defaultOptions, ...options },
   };
@@ -210,6 +212,69 @@ export function processSequenceEvent(
     // Track for hold detection using normalized key
     if (!state.heldKeys.has(event.key)) {
       state.heldKeys.set(event.key, { startTime: now, event });
+      
+      // Check for hold sequences and start timers
+      if (options.sequences) {
+        options.sequences.forEach(seq => {
+          if (seq.type === 'hold') {
+            const keyDef = seq.keys[0];
+            if (!keyDef) return;
+            
+            const targetKey = typeof keyDef === 'string' ? keyDef : keyDef.key;
+            const minHoldTime = typeof keyDef === 'string' 
+              ? options.holdThreshold 
+              : (keyDef.minHoldTime ?? options.holdThreshold);
+            
+            const keyNorm = seq.caseSensitive ? event.key : event.key.toLowerCase();
+            const targetNorm = seq.caseSensitive ? targetKey : targetKey.toLowerCase();
+            
+            if (keyNorm === targetNorm) {
+              // Start hold timer
+              const timerId = setTimeout(() => {
+                // Emit hold match event
+                const match: MatchedSequence = {
+                  sequenceId: seq.id,
+                  sequenceName: seq.name,
+                  type: 'hold',
+                  startTime: now,
+                  endTime: now + minHoldTime,
+                  duration: minHoldTime,
+                  keys: [event],
+                  matchedAt: now + minHoldTime,
+                };
+                
+                // Add to matches
+                matches.push(match);
+                
+                // Trigger callback
+                if (options.onSequenceMatch && state.options.sequences && state.options.sequences.length > 0) {
+                  options.onSequenceMatch(match);
+                }
+                
+                // Add to recent matches
+                state.recentMatches.push(match);
+                if (state.recentMatches.length > 10) {
+                  state.recentMatches.shift();
+                }
+                
+                if (options.debug) {
+                  console.log('[sequenceDetection] Hold matched (timer fired):', seq.id, `${minHoldTime}ms`);
+                }
+                
+                // Remove the timer from tracking
+                state.holdTimers.delete(seq.id);
+              }, minHoldTime);
+              
+              // Store timer for cleanup
+              state.holdTimers.set(seq.id, timerId);
+              
+              if (options.debug) {
+                console.log('[sequenceDetection] Started hold timer for:', seq.id, `${minHoldTime}ms`);
+              }
+            }
+          }
+        });
+      }
     }
 
     // Add to current sequence (only keydown events for sequence matching)
@@ -284,17 +349,34 @@ export function processSequenceEvent(
       console.log('[sequenceDetection] Processing keyup, sequence length before:', state.currentSequence.length);
     }
     
-    // Check for hold completion
-    const heldInfo = state.heldKeys.get(event.key);
-    if (heldInfo) {
-      const holdDuration = now - heldInfo.startTime;
-      
-      // Check hold sequences
-      const holdMatches = checkHoldMatches(event.key, holdDuration, state, now);
-      matches.push(...holdMatches);
-      
-      state.heldKeys.delete(event.key);
+    // Cancel any hold timers for this key
+    if (options.sequences) {
+      options.sequences.forEach(seq => {
+        if (seq.type === 'hold') {
+          const keyDef = seq.keys[0];
+          if (!keyDef) return;
+          
+          const targetKey = typeof keyDef === 'string' ? keyDef : keyDef.key;
+          const keyNorm = seq.caseSensitive ? event.key : event.key.toLowerCase();
+          const targetNorm = seq.caseSensitive ? targetKey : targetKey.toLowerCase();
+          
+          if (keyNorm === targetNorm) {
+            const timerId = state.holdTimers.get(seq.id);
+            if (timerId) {
+              clearTimeout(timerId);
+              state.holdTimers.delete(seq.id);
+              
+              if (options.debug) {
+                console.log('[sequenceDetection] Cancelled hold timer for:', seq.id);
+              }
+            }
+          }
+        }
+      });
     }
+    
+    // Clean up held key tracking
+    state.heldKeys.delete(event.key);
 
     // Remove from active chord keys
     state.activeChordKeys.delete(event.key);
@@ -606,6 +688,11 @@ export function resetSequenceState(state: SequenceState): void {
   state.chordStartTime = null;
   state.chordMatched = false;
   state.heldKeys.clear();
+  
+  // Cancel all hold timers
+  state.holdTimers.forEach(timerId => clearTimeout(timerId));
+  state.holdTimers.clear();
+  
   state.recentMatches = [];
 }
 

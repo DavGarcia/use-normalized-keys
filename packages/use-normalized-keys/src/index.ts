@@ -223,6 +223,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
   const sequenceStateRef = useRef<SequenceState | null>(
     sequences ? createSequenceState(sequences) : null
   );
+  const sequencesClearedRef = useRef(false);
   
   // React state for consumer-relevant changes only
   const [lastEvent, setLastEvent] = useState<NormalizedKeyEvent | null>(null);
@@ -537,6 +538,8 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
 
   // Sequence management functions
   const addSequence = useCallback((definition: SequenceDefinition) => {
+    sequencesClearedRef.current = false; // Reset the cleared flag
+    
     if (!sequenceStateRef.current) {
       sequenceStateRef.current = createSequenceState({
         ...sequences,
@@ -575,6 +578,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
       console.log('[useNormalizedKeys] Clearing sequences, current count:', sequenceStateRef.current.options.sequences?.length || 0);
     }
     
+    sequencesClearedRef.current = true;
     updateSequenceOptions(sequenceStateRef.current, {
       sequences: []
     });
@@ -598,7 +602,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
 
   // Update sequence options when they change
   useEffect(() => {
-    if (sequences && sequenceStateRef.current) {
+    if (sequences && sequenceStateRef.current && !sequencesClearedRef.current) {
       updateSequenceOptions(sequenceStateRef.current, sequences);
     }
   }, [sequences]);

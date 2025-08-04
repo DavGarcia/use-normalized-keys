@@ -1,266 +1,223 @@
 # use-normalized-keys
 
-[![npm version](https://badge.fury.io/js/use-normalized-keys.svg)](https://badge.fury.io/js/use-normalized-keys)
+[![npm version](https://img.shields.io/npm/v/use-normalized-keys.svg)](https://www.npmjs.com/package/use-normalized-keys)
+[![CI Status](https://github.com/DavGarcia/use-normalized-keys/workflows/CI/badge.svg)](https://github.com/DavGarcia/use-normalized-keys/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A React hook for normalized keyboard input handling optimized for games and interactive applications. Provides consistent key mapping across different browsers, platforms, and keyboard layouts with support for gaming inputs, key sequences, and platform-specific quirks.
+A professional React hook for normalized keyboard input handling, optimized for games and interactive applications.
 
-## Features
+## ✨ Features
 
-- 🎮 **Gaming-Optimized**: Perfect for games and interactive applications requiring precise keyboard input
-- 🌐 **Cross-Browser Compatibility**: Handles browser-specific key mapping differences automatically  
-- ⌨️ **Keyboard Layout Agnostic**: Works consistently across QWERTY, AZERTY, DVORAK and other layouts
-- 🔄 **Key Normalization**: Converts browser-specific key codes to standardized identifiers
-- 🔗 **Sequence Detection**: Built-in support for detecting key combinations and sequences
-- 🛡️ **Platform Quirks Handling**: Automatic handling of Windows, macOS, and Linux-specific keyboard behaviors
-- 🚫 **Prevent Default API**: Easy management of browser default behaviors for specific keys
-- 📱 **Mobile Friendly**: Graceful handling of virtual keyboards and mobile input scenarios
-- 🔧 **TypeScript Ready**: Full TypeScript support with comprehensive type definitions
+- **🎮 Gaming-Optimized** - Built for games with high-frequency input, sequence detection, and tap/hold recognition
+- **🌐 Cross-Platform** - Handles Windows Shift+Numpad phantom events, macOS Meta key issues, and platform quirks
+- **⚡ Real-Time Performance** - Optimized with minimal re-renders and efficient state management
+- **🎹 Sequence Detection** - Detect key sequences (Konami code), chords (Ctrl+S), and hold patterns
+- **⏱️ Tap vs Hold** - Distinguish between quick taps and long holds with configurable thresholds
+- **🚫 preventDefault API** - Block browser shortcuts selectively or globally
+- **🔤 Key Normalization** - Consistent key names across browsers and keyboard layouts
+- **📊 Rich Event Data** - Detailed timing, modifiers, numpad state, and duration information
+- **📝 TypeScript Ready** - Full type definitions with comprehensive IntelliSense
 
-## Installation
+## 📦 Installation
 
 ```bash
 npm install use-normalized-keys
 ```
 
-Or with yarn:
-
-```bash
-yarn add use-normalized-keys
-```
-
-## Quick Start
+## 🚀 Quick Start
 
 ```tsx
-import React from 'react';
 import { useNormalizedKeys } from 'use-normalized-keys';
 
-function GameComponent() {
-  const { pressedKeys, keySequence } = useNormalizedKeys({
-    target: 'document',
-    preventDefault: ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space']
-  });
-
-  // Check if specific keys are pressed
-  const isJumping = pressedKeys.has('Space');
-  const isMovingLeft = pressedKeys.has('ArrowLeft');
-  const isMovingRight = pressedKeys.has('ArrowRight');
-
+function App() {
+  const keys = useNormalizedKeys();
+  
   return (
     <div>
-      <p>Use arrow keys and space to control</p>
-      <p>Jumping: {isJumping ? 'Yes' : 'No'}</p>
-      <p>Moving: {isMovingLeft ? 'Left' : isMovingRight ? 'Right' : 'None'}</p>
-      <p>Last sequence: {keySequence.join(' + ')}</p>
+      <p>Pressed keys: {Array.from(keys.pressedKeys).join(', ')}</p>
+      <p>Space pressed: {keys.isKeyPressed('Space') ? 'Yes' : 'No'}</p>
+      <p>Last key: {keys.lastEvent?.key} {keys.lastEvent?.isTap && '(tap)'}</p>
     </div>
   );
 }
 ```
 
-## API Reference
+## 📖 Documentation
 
-### useNormalizedKeys(options?)
+- 📚 [Full Documentation](https://davgarcia.github.io/use-normalized-keys/)
+- 🎮 [Interactive Demo](https://davgarcia.github.io/use-normalized-keys/demo/)
+- 🔧 [API Reference](https://davgarcia.github.io/use-normalized-keys/api.html)
 
-The main hook that provides normalized keyboard input handling.
+## 🎯 Key Features
 
-#### Parameters
+### Real-Time Key State
 
-- `options` (optional): Configuration object
+```tsx
+const keys = useNormalizedKeys();
 
-```typescript
-interface UseNormalizedKeysOptions {
-  target?: EventTarget | 'document' | 'window';
-  preventDefault?: string[] | boolean;
-  enableSequenceDetection?: boolean;
-  sequenceTimeout?: number;
-  includeMouseEvents?: boolean;
-  customMappings?: Record<string, string>;
-}
-```
+// Check if specific keys are pressed
+if (keys.isKeyPressed('w')) moveUp();
+if (keys.isKeyPressed('Space')) jump();
 
-#### Options
+// Get all pressed keys
+console.log(Array.from(keys.pressedKeys)); // ['w', 'Space', 'Shift']
 
-- **target** (`EventTarget | 'document' | 'window'`): Event target for keyboard listeners. Defaults to `'document'`.
-- **preventDefault** (`string[] | boolean`): Keys or key patterns to prevent default behavior for. Pass `true` to prevent all defaults.
-- **enableSequenceDetection** (`boolean`): Enable detection of key sequences and combinations. Defaults to `true`.
-- **sequenceTimeout** (`number`): Timeout in milliseconds for sequence detection. Defaults to `1000`.
-- **includeMouseEvents** (`boolean`): Include mouse button events in key detection. Defaults to `false`.
-- **customMappings** (`Record<string, string>`): Custom key mappings to override default normalization.
-
-#### Returns
-
-```typescript
-interface UseNormalizedKeysReturn {
-  pressedKeys: Set<string>;
-  keySequence: string[];
-  isPressed: (key: string) => boolean;
-  getModifiers: () => ModifierState;
-  clearSequence: () => void;
-}
-```
-
-- **pressedKeys**: Set of currently pressed normalized key identifiers
-- **keySequence**: Array of recent key presses for sequence detection
-- **isPressed**: Function to check if a specific key is currently pressed
-- **getModifiers**: Function returning current modifier key states (ctrl, alt, shift, meta)
-- **clearSequence**: Function to manually clear the current key sequence
-
-### Key Normalization
-
-The hook automatically normalizes various browser-specific and platform-specific key representations:
-
-```typescript
-// Browser differences normalized to standard identifiers
-'Spacebar' → 'Space'           // IE/Edge compatibility
-'Left' → 'ArrowLeft'           // IE compatibility  
-'Esc' → 'Escape'               // Shortened form
-'Del' → 'Delete'               // Shortened form
-
-// Gaming keys normalized
-'WASD' keys work consistently across keyboard layouts
-Function keys (F1-F24) normalized across browsers
-Numpad keys distinguished from main number keys
+// Access modifier states
+if (keys.activeModifiers.shift) runFaster();
 ```
 
 ### Sequence Detection
 
-The hook can detect key combinations and sequences:
-
 ```tsx
-function SequenceExample() {
-  const { keySequence, clearSequence } = useNormalizedKeys();
-
-  useEffect(() => {
-    // Detect specific sequence
-    if (keySequence.join(' ') === 'ArrowUp ArrowUp ArrowDown ArrowDown ArrowLeft ArrowRight ArrowLeft ArrowRight KeyB KeyA') {
-      console.log('Konami code detected!');
-      clearSequence();
+const keys = useNormalizedKeys({
+  sequences: {
+    sequences: [
+      {
+        id: 'konami',
+        keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'],
+        type: 'sequence'
+      },
+      {
+        id: 'save',
+        keys: ['Control', 's'],
+        type: 'chord'
+      }
+    ],
+    onSequenceMatch: (match) => {
+      console.log(`Sequence ${match.sequenceId} detected!`);
     }
-  }, [keySequence, clearSequence]);
-
-  return <div>Enter the Konami code!</div>;
-}
-```
-
-### Platform Quirks Handling
-
-The hook automatically handles platform-specific keyboard behaviors:
-
-- **Windows**: Handles Shift+NumLock phantom events, Windows key behavior
-- **macOS**: Proper Command key handling, Option key combinations  
-- **Linux**: Various desktop environment key handling differences
-- **Mobile**: Virtual keyboard support and touch event integration
-
-## Advanced Usage
-
-### Custom Key Mappings
-
-```tsx
-const { pressedKeys } = useNormalizedKeys({
-  customMappings: {
-    'NumpadEnter': 'Enter',      // Treat numpad enter same as regular enter
-    'ContextMenu': 'Menu',       // Normalize context menu key
   }
 });
 ```
 
-### Prevent Default for Specific Keys
+### Tap vs Hold Detection
 
 ```tsx
-const { pressedKeys } = useNormalizedKeys({
-  preventDefault: [
-    'Tab',           // Prevent tab navigation
-    'Space',         // Prevent page scroll
-    'ArrowUp',       // Prevent page scroll
-    'ArrowDown',     // Prevent page scroll
-    'F5',           // Prevent page refresh
-    'F11',          // Prevent fullscreen toggle
-  ]
+const keys = useNormalizedKeys({ 
+  tapHoldThreshold: 200 // milliseconds
 });
-```
 
-### Gaming Controller Integration
-
-```tsx
-function GameWithController() {
-  const { pressedKeys, isPressed } = useNormalizedKeys({
-    includeMouseEvents: true,
-    preventDefault: true
-  });
-
-  // Handle WASD movement
-  const movement = {
-    up: isPressed('KeyW'),
-    left: isPressed('KeyA'), 
-    down: isPressed('KeyS'),
-    right: isPressed('KeyD')
-  };
-
-  // Handle mouse buttons as additional inputs
-  const shooting = isPressed('Mouse0'); // Left mouse button
-  const aiming = isPressed('Mouse2');   // Right mouse button
-
-  return <GameRenderer movement={movement} shooting={shooting} aiming={aiming} />;
+// In your component
+if (keys.lastEvent?.type === 'keyup') {
+  if (keys.lastEvent.isTap) {
+    console.log('Quick tap!');
+  } else if (keys.lastEvent.isHold) {
+    console.log('Long hold!');
+  }
 }
 ```
 
-## Browser Support
+### preventDefault API
 
-- Chrome/Chromium 88+
+```tsx
+// Prevent specific keys
+const keys = useNormalizedKeys({
+  preventDefault: ['Tab', 'F5', 'F11']
+});
+
+// Prevent all keys (useful for games)
+const keys = useNormalizedKeys({
+  preventDefault: true
+});
+```
+
+## 🎮 Game Example
+
+```tsx
+function GameComponent() {
+  const keys = useNormalizedKeys({
+    preventDefault: true,
+    tapHoldThreshold: 150,
+    sequences: {
+      sequences: [
+        { id: 'special-move', keys: ['a', 's', 'd', 'f'], type: 'sequence' }
+      ],
+      onSequenceMatch: (match) => {
+        if (match.sequenceId === 'special-move') {
+          executeSpecialMove();
+        }
+      }
+    }
+  });
+
+  useEffect(() => {
+    const gameLoop = () => {
+      // Movement
+      const speed = keys.activeModifiers.shift ? 2 : 1;
+      if (keys.isKeyPressed('w')) player.y -= speed;
+      if (keys.isKeyPressed('s')) player.y += speed;
+      if (keys.isKeyPressed('a')) player.x -= speed;
+      if (keys.isKeyPressed('d')) player.x += speed;
+      
+      // Actions
+      if (keys.isKeyPressed('Space')) player.jump();
+      
+      requestAnimationFrame(gameLoop);
+    };
+    
+    gameLoop();
+  }, [keys]);
+  
+  return <canvas />;
+}
+```
+
+## 🛠️ API Reference
+
+### Hook Options
+
+```typescript
+interface UseNormalizedKeysOptions {
+  enabled?: boolean;              // Enable/disable the hook
+  debug?: boolean;                // Enable debug logging
+  excludeInputFields?: boolean;   // Ignore input/textarea elements (default: true)
+  tapHoldThreshold?: number;      // Tap vs hold threshold in ms (default: 200)
+  sequences?: SequenceOptions;    // Sequence detection configuration
+  preventDefault?: boolean | string[]; // Prevent default for all or specific keys
+}
+```
+
+### Return Value
+
+```typescript
+interface NormalizedKeyState {
+  lastEvent: NormalizedKeyEvent | null;  // Last keyboard event
+  pressedKeys: Set<string>;               // Currently pressed keys
+  isKeyPressed: (key: string) => boolean; // Check if key is pressed
+  activeModifiers: ModifierState;         // Modifier key states
+  sequences?: SequenceAPI;                // Sequence detection API
+}
+```
+
+### Event Data
+
+```typescript
+interface NormalizedKeyEvent {
+  key: string;                // Normalized key name
+  type: 'keydown' | 'keyup';
+  duration?: number;          // Duration in ms (keyup only)
+  isTap?: boolean;           // True if duration < threshold
+  isHold?: boolean;          // True if duration >= threshold
+  timestamp: number;
+  activeModifiers: ModifierState;
+  // ... and more
+}
+```
+
+## 🌍 Browser Support
+
+- Chrome/Edge 88+
 - Firefox 78+
 - Safari 14+
-- Edge 88+
 
-## Contributing
+## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](https://github.com/DavGarcia/use-normalized-keys/blob/main/CONTRIBUTING.md) for details.
 
-### Development Setup
+## 📄 License
 
-```bash
-# Clone the repository
-git clone https://github.com/dgarcia102/use-normalized-keys.git
-cd use-normalized-keys
+MIT © [David Garcia](https://github.com/DavGarcia)
 
-# Install dependencies
-npm install
+---
 
-# Run tests
-npm test
-
-# Build the library
-npm run build
-
-# Run interactive demo
-npm run dev
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run browser-based tests
-npm run test:browser
-```
-
-## License
-
-MIT © [Daniel Garcia](https://github.com/dgarcia102)
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes.
-
-## Related Projects
-
-- [use-keyboard-shortcut](https://github.com/arthurtyukayev/use-keyboard-shortcut) - React hook for keyboard shortcuts
-- [react-hotkeys-hook](https://github.com/JohannesKlauss/react-hotkeys-hook) - React hook for hotkeys
-- [hotkeys-js](https://github.com/jaywcjlove/hotkeys) - Vanilla JavaScript hotkeys library
+Made with ❤️ for the React gaming and interactive app community.

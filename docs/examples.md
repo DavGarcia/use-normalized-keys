@@ -261,13 +261,25 @@ function PlatformDemo() {
 
 ```tsx
 import { useNormalizedKeys } from 'use-normalized-keys';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-function AdvancedGame() {
-  const [gameState, setGameState] = useState({
+// Type definitions for better TypeScript support
+interface Bullet { x: number; y: number; id: number; }
+interface Enemy { x: number; y: number; id: number; }
+interface Player { x: number; y: number; health: number; speed: number; }
+interface GameState {
+  player: Player;
+  enemies: Enemy[];
+  bullets: Bullet[];
+  paused: boolean;
+  cheatsEnabled: boolean;
+}
+
+export default function AdvancedGame() {
+  const [gameState, setGameState] = useState<GameState>({
     player: { x: 250, y: 250, health: 100, speed: 3 },
     enemies: [{ x: 100, y: 100, id: 1 }, { x: 400, y: 150, id: 2 }],
-    bullets: [] as Array<{x: number, y: number, id: number}>,
+    bullets: [],
     paused: false,
     cheatsEnabled: false
   });
@@ -288,7 +300,11 @@ function AdvancedGame() {
       ],
       onSequenceMatch: (match) => {
         if (match.sequenceId === 'konami' || match.sequenceId === 'godmode') {
-          setGameState(prev => ({ ...prev, cheatsEnabled: true, player: { ...prev.player, health: 999 } }));
+          setGameState(prev => ({ 
+            ...prev, 
+            cheatsEnabled: true, 
+            player: { ...prev.player, health: 999 } 
+          }));
         }
       }
     },
@@ -297,65 +313,86 @@ function AdvancedGame() {
     debug: false
   });
   
-  // Game loop
+  // Game loop using requestAnimationFrame for smoother performance
+  const animationFrameRef = useRef<number>();
+  const lastFrameTimeRef = useRef<number>(0);
+  
   useEffect(() => {
     if (gameState.paused) return;
     
-    const gameLoop = setInterval(() => {
+    const gameLoop = (timestamp: number) => {
+      // Throttle to ~60 FPS
+      if (timestamp - lastFrameTimeRef.current < 16) {
+        animationFrameRef.current = requestAnimationFrame(gameLoop);
+        return;
+      }
+      lastFrameTimeRef.current = timestamp;
+      
       setGameState(prev => {
-        const newState = { ...prev };
+        // Deep clone player to avoid mutations
+        const player = { ...prev.player };
+        let bullets = prev.bullets.slice(); // Clone bullets array
         
         // Player movement with different speeds for tap vs hold
-        const baseSpeed = newState.player.speed;
+        const baseSpeed = player.speed;
         const isRunning = keys.isKeyPressed('Shift');
         const currentSpeed = isRunning ? baseSpeed * 2 : baseSpeed;
         
         if (keys.isKeyPressed('w') || keys.isKeyPressed('ArrowUp')) {
-          newState.player.y = Math.max(0, newState.player.y - currentSpeed);
+          player.y = Math.max(0, player.y - currentSpeed);
         }
         if (keys.isKeyPressed('s') || keys.isKeyPressed('ArrowDown')) {
-          newState.player.y = Math.min(480, newState.player.y + currentSpeed);
+          player.y = Math.min(480, player.y + currentSpeed);
         }
         if (keys.isKeyPressed('a') || keys.isKeyPressed('ArrowLeft')) {
-          newState.player.x = Math.max(0, newState.player.x - currentSpeed);
+          player.x = Math.max(0, player.x - currentSpeed);
         }
         if (keys.isKeyPressed('d') || keys.isKeyPressed('ArrowRight')) {
-          newState.player.x = Math.min(480, newState.player.x + currentSpeed);
+          player.x = Math.min(480, player.x + currentSpeed);
         }
         
         // Shooting with tap vs hold
         if (keys.isKeyPressed('Space')) {
           const now = Date.now();
-          const lastBullet = newState.bullets[newState.bullets.length - 1];
+          const lastBullet = bullets[bullets.length - 1];
           const timeSinceLastBullet = lastBullet ? now - lastBullet.id : 1000;
           
           // Rapid fire if holding space, slower if tapping
           const fireRate = keys.lastEvent?.isHold ? 50 : 200;
           
           if (timeSinceLastBullet > fireRate) {
-            newState.bullets.push({
-              x: newState.player.x + 10,
-              y: newState.player.y - 10,
+            // Create new array with new bullet
+            bullets = bullets.concat({
+              x: player.x + 10,
+              y: player.y - 10,
               id: now
             });
           }
         }
         
-        // Move bullets
-        newState.bullets = newState.bullets
+        // Move bullets (immutably)
+        bullets = bullets
           .map(bullet => ({ ...bullet, y: bullet.y - 8 }))
           .filter(bullet => bullet.y > 0);
         
-        return newState;
+        return { ...prev, player, bullets };
       });
-    }, 16); // 60 FPS
+      
+      animationFrameRef.current = requestAnimationFrame(gameLoop);
+    };
     
-    return () => clearInterval(gameLoop);
-  }, [keys.pressedKeys, gameState.paused]);
+    animationFrameRef.current = requestAnimationFrame(gameLoop);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [keys.isKeyPressed, gameState.paused]); // Note: keys.isKeyPressed is stable
   
-  // Pause toggle
+  // Pause toggle - use keyup to avoid key repeat issues
   useEffect(() => {
-    if (keys.lastEvent?.key === 'p' && keys.lastEvent?.type === 'keydown') {
+    if (keys.lastEvent?.key === 'p' && keys.lastEvent?.type === 'keyup') {
       setGameState(prev => ({ ...prev, paused: !prev.paused }));
     }
   }, [keys.lastEvent]);
@@ -365,12 +402,15 @@ function AdvancedGame() {
       <h2>Advanced Game Demo</h2>
       
       <div 
+        tabIndex={0}
+        autoFocus
         style={{ 
           position: 'relative', 
           width: 500, 
           height: 500, 
           border: '2px solid #333',
-          backgroundColor: gameState.cheatsEnabled ? '#001100' : '#000011'
+          backgroundColor: gameState.cheatsEnabled ? '#001100' : '#000011',
+          outline: 'none'
         }}
       >
         {/* Player */}

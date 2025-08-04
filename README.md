@@ -3,6 +3,8 @@
 A professional React hook for normalized keyboard input handling, optimized for games and interactive applications.
 
 [![npm version](https://img.shields.io/npm/v/use-normalized-keys.svg)](https://www.npmjs.com/package/use-normalized-keys)
+[![CI Status](https://github.com/DavGarcia/use-normalized-keys/workflows/CI/badge.svg)](https://github.com/DavGarcia/use-normalized-keys/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-vitepress-brightgreen)](https://davgarcia.github.io/use-normalized-keys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 📦 Packages

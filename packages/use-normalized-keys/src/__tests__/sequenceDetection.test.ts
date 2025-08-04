@@ -320,55 +320,43 @@ describe('Sequence Detection', () => {
   });
 
   describe('Hold Detection', () => {
-    it.skip('should detect key hold', async () => {
-      // TODO: This test needs to be fixed - the timing mechanism with fake timers
-      // doesn't work properly with the current timestamp-based approach.
-      // The functionality works in the demo, but testing it requires a different approach.
-      
-      vi.useFakeTimers();
-      
+    it('should detect key hold', async () => {
       const onMatch = vi.fn();
       const sequences: SequenceDefinition[] = [{
-        id: 'hold-space',
-        keys: [{ key: ' ', minHoldTime: 200 }],
+        id: 'hold-a',
+        keys: [{ key: 'a', minHoldTime: 200 }],
         type: 'hold',
       }];
 
-      const { result } = renderHook(() => useNormalizedKeys({
+      renderHook(() => useNormalizedKeys({
         sequences: {
           sequences,
           onSequenceMatch: onMatch,
-          holdThreshold: 100,
-          debug: true,
         },
       }));
 
       // Simulate keydown
       await act(async () => {
-        simulateKeyEvent('keydown', ' ');
+        simulateKeyEvent('keydown', 'a');
       });
       
-      // Advance time to simulate holding (300ms > 200ms minHoldTime)
+      // Wait for hold duration with real timers
       await act(async () => {
-        vi.advanceTimersByTime(300);
+        await new Promise(resolve => setTimeout(resolve, 250));
       });
       
-      // Simulate keyup after the hold duration
-      await act(async () => {
-        simulateKeyEvent('keyup', ' ');
-      });
-
-      // Check if the hold was detected
+      // Check if the hold was detected (should fire during hold, not on release)
       expect(onMatch).toHaveBeenCalled();
       
-      if (onMatch.mock.calls.length > 0) {
-        const match = onMatch.mock.calls[0][0] as MatchedSequence;
-        expect(match.sequenceId).toBe('hold-space');
-        expect(match.type).toBe('hold');
-        expect(match.duration).toBeGreaterThanOrEqual(200);
-      }
+      const match = onMatch.mock.calls[0][0] as MatchedSequence;
+      expect(match.sequenceId).toBe('hold-a');
+      expect(match.type).toBe('hold');
+      expect(match.duration).toBe(200); // Should be exactly minHoldTime
       
-      vi.useRealTimers();
+      // Simulate keyup to clean up
+      await act(async () => {
+        simulateKeyEvent('keyup', 'a');
+      });
     });
 
     it('should not trigger hold for short press', async () => {
@@ -472,10 +460,7 @@ describe('Sequence Detection', () => {
       expect(onMatch).not.toHaveBeenCalled();
     });
 
-    it.skip('should clear all sequences', async () => {
-      // TODO: This test is failing because sequences are still being triggered after clear
-      // This needs investigation into the sequence state management
-      // The functionality works in the demo, but the test timing is problematic 
+    it('should clear all sequences', async () => { 
       
       const onMatch = vi.fn();
       const { result } = renderHook(() => useNormalizedKeys({

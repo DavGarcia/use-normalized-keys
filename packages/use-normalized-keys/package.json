@@ -1,6 +1,6 @@
 {
   "name": "use-normalized-keys",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A React hook for normalized keyboard input handling optimized for games and interactive applications",
   "main": "dist/index.umd.js",
   "module": "dist/index.es.js",
@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
+    "build:demo": "vite build --config vite.demo.config.js",
     "dev": "vite build --watch",
     "preview": "vite preview",
     "test": "vitest",

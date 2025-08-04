@@ -263,10 +263,28 @@ export default function InteractiveDemo() {
   return (
     <div className="demo-container">
       <header className="demo-header">
-        <h1>useNormalizedKeys Interactive Demo</h1>
-        <p className="demo-subtitle">
-          A professional React hook for normalized keyboard input handling
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1>useNormalizedKeys Interactive Demo</h1>
+            <p className="demo-subtitle">
+              A professional React hook for normalized keyboard input handling
+            </p>
+          </div>
+          <a 
+            href="../" 
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#3eaf7c',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '4px',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            ← Back to Documentation
+          </a>
+        </div>
       </header>
 
       <div className="demo-info-bar">

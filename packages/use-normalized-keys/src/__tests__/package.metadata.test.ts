@@ -85,9 +85,10 @@ describe('Package Metadata', () => {
       if (fs.existsSync(readmePath)) {
         const readmeContent = fs.readFileSync(readmePath, 'utf-8');
         expect(readmeContent).toContain('# use-normalized-keys');
-        expect(readmeContent).toContain('## Installation');
-        expect(readmeContent).toContain('## Quick Start');
-        expect(readmeContent).toContain('## API Reference');
+        expect(readmeContent).toContain('## 📦 Installation');
+        expect(readmeContent).toContain('## 🚀 Quick Start');
+        expect(readmeContent).toContain('## 🛠️ API Reference');
+        expect(readmeContent).toContain('## ✨ Features');
         expect(readmeContent.length).toBeGreaterThan(500);
       }
     });
