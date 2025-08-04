@@ -10,7 +10,7 @@ export default defineConfig({
       { text: 'Guide', link: '/' },
       { text: 'API Reference', link: '/api' },
       { text: 'Demo', link: '/demo' },
-      { text: 'GitHub', link: 'https://github.com/username/use-normalized-keys' }
+      { text: 'GitHub', link: 'https://github.com/DavGarcia/use-normalized-keys' }
     ],
     
     sidebar: [
@@ -39,7 +39,7 @@ export default defineConfig({
     ],
     
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/username/use-normalized-keys' }
+      { icon: 'github', link: 'https://github.com/DavGarcia/use-normalized-keys' }
     ],
     
     footer: {
