@@ -122,6 +122,46 @@ interface NormalizedKeyEvent {
 }
 ```
 
+### `SequenceDefinition`
+
+```typescript
+interface SequenceDefinition {
+  id: string;                  // Unique identifier for the sequence
+  name?: string;               // Optional human-readable name
+  keys: SequenceKey[];         // Array of keys in the sequence
+  type: 'sequence' | 'chord' | 'hold';  // Type of sequence
+  timeout?: number;            // Timeout between keys (for 'sequence' type)
+  allowOtherKeys?: boolean;    // Allow other keys between sequence keys
+  caseSensitive?: boolean;     // Whether to match case exactly
+}
+
+type SequenceKey = string | {
+  key: string;                 // The key to match
+  minHoldTime?: number;        // Minimum hold time in ms (for 'hold' type)
+  modifiers?: {                // Required modifier states
+    ctrl?: boolean;
+    shift?: boolean;
+    alt?: boolean;
+    meta?: boolean;
+  };
+};
+```
+
+### `MatchedSequence`
+
+```typescript
+interface MatchedSequence {
+  sequenceId: string;          // ID of the matched sequence
+  sequenceName?: string;       // Name of the matched sequence
+  type: 'sequence' | 'chord' | 'hold';
+  startTime: number;           // When the sequence started
+  endTime: number;             // When the sequence completed
+  duration: number;            // Total duration
+  keys: NormalizedKeyEvent[];  // The actual keys that matched
+  matchedAt: number;          // Timestamp when match was detected
+}
+```
+
 ## Examples
 
 ### Basic Usage
@@ -174,6 +214,11 @@ const keys = useNormalizedKeys({
         id: 'ctrl-s',
         keys: ['Control', 's'],
         type: 'chord'
+      },
+      {
+        id: 'charge-jump',
+        keys: [{ key: 'Space', minHoldTime: 500 }],
+        type: 'hold'
       }
     ],
     onSequenceMatch: (match) => {
@@ -185,6 +230,50 @@ const keys = useNormalizedKeys({
 // Access matched sequences
 console.log(keys.sequences?.matches);
 ```
+
+### Hold Detection
+
+Hold detection fires events when a key is held for a specified duration. Unlike tap/hold detection, hold sequences fire **during** the hold, not on release.
+
+```tsx
+const keys = useNormalizedKeys({
+  sequences: {
+    sequences: [
+      // Basic hold - fires after 500ms while space is still pressed
+      {
+        id: 'charge-jump',
+        name: 'Charge Jump',
+        keys: [{ key: 'Space', minHoldTime: 500 }],
+        type: 'hold'
+      },
+      // Hold with modifiers
+      {
+        id: 'power-attack',
+        name: 'Power Attack',
+        keys: [{ 
+          key: 'f', 
+          minHoldTime: 1000,
+          modifiers: { shift: true }
+        }],
+        type: 'hold'
+      }
+    ],
+    onSequenceMatch: (match) => {
+      if (match.type === 'hold') {
+        console.log(`Hold activated: ${match.sequenceId}`);
+        // This fires DURING the hold, after minHoldTime
+      }
+    }
+  }
+});
+```
+
+#### Hold Timing Behavior
+
+- **Proactive firing**: Hold events fire exactly when `minHoldTime` is reached
+- **During press**: Events fire while the key is still pressed, not on release
+- **Single firing**: Each hold fires once per press when the threshold is reached
+- **Cancellation**: Releasing the key before `minHoldTime` cancels the hold
 
 ### preventDefault API
 

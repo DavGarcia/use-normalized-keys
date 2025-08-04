@@ -81,6 +81,11 @@ const keys = useNormalizedKeys({
         id: 'save',
         keys: ['Control', 's'],
         type: 'chord'
+      },
+      {
+        id: 'charge-jump',
+        keys: [{ key: 'Space', minHoldTime: 750 }],
+        type: 'hold'
       }
     ],
     onSequenceMatch: (match) => {
@@ -89,6 +94,57 @@ const keys = useNormalizedKeys({
   }
 });
 ```
+
+### Hold Detection
+
+Hold detection allows you to trigger events when a key is held for a specific duration. Unlike tap/hold detection which only reports on key release, hold sequences fire **during** the hold when the minimum time is reached.
+
+```tsx
+const keys = useNormalizedKeys({
+  sequences: {
+    sequences: [
+      // Simple hold - fires after holding space for 500ms
+      {
+        id: 'charge-jump',
+        name: 'Charge Jump',
+        keys: [{ key: 'Space', minHoldTime: 500 }],
+        type: 'hold'
+      },
+      // Hold with modifiers
+      {
+        id: 'special-move',
+        name: 'Special Move',
+        keys: [{ 
+          key: 's', 
+          minHoldTime: 600,
+          modifiers: { ctrl: true }
+        }],
+        type: 'hold'
+      }
+    ],
+    onSequenceMatch: (match) => {
+      if (match.type === 'hold') {
+        console.log(`Hold detected: ${match.sequenceId}`);
+        // Fires DURING the hold, not on release
+      }
+    }
+  }
+});
+```
+
+#### Hold Configuration
+
+The `minHoldTime` parameter specifies how long (in milliseconds) a key must be held before the hold event fires:
+
+- **Timing**: Hold events fire exactly when `minHoldTime` is reached, while the key is still pressed
+- **Range**: Typically 200-2000ms depending on your use case
+- **Modifiers**: Can require specific modifier keys to be held simultaneously
+
+Common use cases:
+- **Charge mechanics**: Hold to charge jump power, attacks, etc. (500-1000ms)
+- **Heavy attacks**: Fighting game style heavy/EX moves (300-600ms)  
+- **Context menus**: Long press to show options (600-800ms)
+- **Safety actions**: Hold to confirm dangerous operations (1000-2000ms)
 
 ### Tap vs Hold Detection
 

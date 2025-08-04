@@ -88,6 +88,115 @@ function SequenceExample() {
 }
 ```
 
+## Hold Detection for Charged Actions
+
+```tsx
+import { useNormalizedKeys } from 'use-normalized-keys';
+import { useState, useEffect } from 'react';
+
+function HoldDetectionExample() {
+  const [chargeLevel, setChargeLevel] = useState(0);
+  const [powerAttacks, setPowerAttacks] = useState<string[]>([]);
+  
+  const keys = useNormalizedKeys({
+    sequences: {
+      sequences: [
+        {
+          id: 'light-charge',
+          name: 'Light Charge',
+          keys: [{ key: 'Space', minHoldTime: 300 }],
+          type: 'hold'
+        },
+        {
+          id: 'medium-charge',
+          name: 'Medium Charge',
+          keys: [{ key: 'Space', minHoldTime: 700 }],
+          type: 'hold'
+        },
+        {
+          id: 'full-charge',
+          name: 'Full Charge',
+          keys: [{ key: 'Space', minHoldTime: 1200 }],
+          type: 'hold'
+        },
+        {
+          id: 'power-attack',
+          name: 'Power Attack',
+          keys: [{ 
+            key: 'f', 
+            minHoldTime: 800,
+            modifiers: { shift: true }
+          }],
+          type: 'hold'
+        }
+      ],
+      onSequenceMatch: (match) => {
+        if (match.type === 'hold') {
+          switch(match.sequenceId) {
+            case 'light-charge':
+              setChargeLevel(1);
+              break;
+            case 'medium-charge':
+              setChargeLevel(2);
+              break;
+            case 'full-charge':
+              setChargeLevel(3);
+              break;
+            case 'power-attack':
+              setPowerAttacks(prev => [...prev, `Power Attack! ${new Date().toLocaleTimeString()}`]);
+              break;
+          }
+        }
+      }
+    }
+  });
+  
+  // Reset charge on space release
+  useEffect(() => {
+    if (keys.lastEvent?.type === 'keyup' && keys.lastEvent.key === ' ') {
+      if (chargeLevel > 0) {
+        setPowerAttacks(prev => [...prev, `Jump with charge level ${chargeLevel}!`]);
+        setChargeLevel(0);
+      }
+    }
+  }, [keys.lastEvent, chargeLevel]);
+  
+  return (
+    <div>
+      <h2>Hold Detection Example</h2>
+      
+      <div>
+        <h3>Controls:</h3>
+        <ul>
+          <li>Hold SPACE to charge jump (300ms / 700ms / 1200ms)</li>
+          <li>Hold SHIFT+F for power attack (800ms)</li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3>Charge Level: {chargeLevel}/3</h3>
+        <div style={{width: '200px', height: '20px', backgroundColor: '#ddd', borderRadius: '10px'}}>
+          <div style={{
+            width: `${(chargeLevel / 3) * 100}%`,
+            height: '100%',
+            backgroundColor: chargeLevel === 3 ? '#ff0000' : chargeLevel === 2 ? '#ffa500' : '#00ff00',
+            borderRadius: '10px',
+            transition: 'width 0.3s'
+          }} />
+        </div>
+      </div>
+      
+      <div>
+        <h3>Action Log:</h3>
+        {powerAttacks.slice(-5).map((action, i) => (
+          <p key={i}>⚡ {action}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
 ## preventDefault API & Browser Shortcut Blocking
 
 ```tsx

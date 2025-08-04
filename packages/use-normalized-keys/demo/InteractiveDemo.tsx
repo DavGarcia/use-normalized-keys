@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useNormalizedKeys, SequenceDefinition, MatchedSequence } from '../src';
 import './InteractiveDemo.css';
 
@@ -20,8 +20,29 @@ const NUMPAD_LAYOUT = [
   ['0', '0', '.', 'Enter']
 ];
 
+// Map display keys to actual key codes for numpad
+const NUMPAD_KEY_CODE_MAP: Record<string, string> = {
+  'NumLock': 'NumLock',
+  '/': 'NumpadDivide',
+  '*': 'NumpadMultiply',
+  '-': 'NumpadSubtract',
+  '+': 'NumpadAdd',
+  'Enter': 'NumpadEnter',
+  '.': 'NumpadDecimal',
+  '0': 'Numpad0',
+  '1': 'Numpad1',
+  '2': 'Numpad2',
+  '3': 'Numpad3',
+  '4': 'Numpad4',
+  '5': 'Numpad5',
+  '6': 'Numpad6',
+  '7': 'Numpad7',
+  '8': 'Numpad8',
+  '9': 'Numpad9'
+};
+
 // Predefined sequences for demo
-const DEMO_SEQUENCES: SequenceDefinition[] = [
+const getSequences = (customHoldTime: number): SequenceDefinition[] => [
   {
     id: 'konami',
     name: 'Konami Code',
@@ -53,6 +74,35 @@ const DEMO_SEQUENCES: SequenceDefinition[] = [
     keys: ['Control', 'z'],
     type: 'chord'
   },
+  // Hold detection examples
+  {
+    id: 'charge-jump',
+    name: 'Charge Jump (Hold Space)',
+    keys: [{ key: 'Space', minHoldTime: 750 }],
+    type: 'hold'
+  },
+  {
+    id: 'power-attack',
+    name: 'Power Attack (Hold F)',
+    keys: [{ key: 'f', minHoldTime: 1000 }],
+    type: 'hold'
+  },
+  {
+    id: 'heavy-punch',
+    name: 'Heavy Punch (Hold H)',
+    keys: [{ key: 'h', minHoldTime: 400 }],
+    type: 'hold'
+  },
+  {
+    id: 'special-move',
+    name: 'Special Move (Hold Ctrl+S)',
+    keys: [{ 
+      key: 's', 
+      minHoldTime: 600,
+      modifiers: { ctrl: true }
+    }],
+    type: 'hold'
+  },
   {
     id: 'select-all',
     name: 'Select All (Ctrl+A)',
@@ -73,33 +123,66 @@ const DEMO_SEQUENCES: SequenceDefinition[] = [
     type: 'sequence',
     timeout: 1000
   },
+  // Custom hold sequence
   {
-    id: 'hold-space',
-    name: 'Hold Space (1s)',
-    keys: [{ key: ' ', minHoldTime: 1000 }],
-    type: 'hold'
-  },
-  {
-    id: 'hold-enter',
-    name: 'Hold Enter (500ms)',
-    keys: [{ key: 'Enter', minHoldTime: 500 }],
+    id: 'custom-hold',
+    name: `Custom Hold (${customHoldTime}ms)`,
+    keys: [{ key: 'x', minHoldTime: customHoldTime }],
     type: 'hold'
   }
 ];
+
+// Memoized progress bar component to prevent unnecessary re-renders
+const HoldProgressBar = memo(({ 
+  sequenceId, 
+  activeHolds, 
+  animationTick 
+}: { 
+  sequenceId: string; 
+  activeHolds: Map<string, { startTime: number; minHoldTime: number }>;
+  animationTick: number;
+}) => {
+  const holdInfo = activeHolds.get(sequenceId);
+  const progress = holdInfo 
+    ? Math.min(100, Math.max(0, ((Date.now() - holdInfo.startTime) / holdInfo.minHoldTime) * 100))
+    : 0;
+  
+  return (
+    <div 
+      className="charge-fill"
+      style={{
+        width: `${progress}%`,
+        backgroundColor: sequenceId.includes('charge') ? '#3eaf7c' : 
+                        sequenceId.includes('power') ? '#e74c3c' :
+                        sequenceId.includes('heavy') ? '#f39c12' :
+                        sequenceId.includes('special') ? '#9b59b6' :
+                        sequenceId.includes('custom') ? '#3498db' : '#3eaf7c',
+        transition: 'none'
+      }}
+    />
+  );
+});
 
 export default function InteractiveDemo() {
   const [excludeInputs, setExcludeInputs] = useState(true);
   const [debugMode, setDebugMode] = useState(false);
   const [showSequences, setShowSequences] = useState(true);
-  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(true);
   const [eventHistory, setEventHistory] = useState<any[]>([]);
   const [matchedSequences, setMatchedSequences] = useState<MatchedSequence[]>([]);
   const [customSequence, setCustomSequence] = useState('');
   const [recordingSequence, setRecordingSequence] = useState(false);
   const [recordedKeys, setRecordedKeys] = useState<string[]>([]);
+  const [customSequences, setCustomSequences] = useState<SequenceDefinition[]>([]);
   const [snackbar, setSnackbar] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
+  const [activeHolds, setActiveHolds] = useState<Map<string, { startTime: number; minHoldTime: number }>>(new Map());
+  const [customHoldTime, setCustomHoldTime] = useState(500);
+  const [showCustomHold, setShowCustomHold] = useState(false);
+  const [animationTick, setAnimationTick] = useState(0);
   const eventIdRef = useRef(0);
   const sequenceIdRef = useRef(0);
+  const animationFrameRef = useRef<number | null>(null);
+  const activeHoldsRef = useRef<Map<string, { startTime: number; minHoldTime: number }>>(new Map());
   
   // Prevent default behavior for certain keys
   useEffect(() => {
@@ -146,6 +229,45 @@ export default function InteractiveDemo() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Keep activeHoldsRef in sync
+  useEffect(() => {
+    activeHoldsRef.current = activeHolds;
+  }, [activeHolds]);
+
+  // Smooth animation for hold progress
+  useEffect(() => {
+    let lastTime = 0;
+    const animate = (currentTime: number) => {
+      // Throttle to 60fps
+      if (currentTime - lastTime >= 16) {
+        if (activeHoldsRef.current.size > 0) {
+          setAnimationTick(prev => prev + 1);
+          lastTime = currentTime;
+        }
+      }
+      
+      if (activeHoldsRef.current.size > 0) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        animationFrameRef.current = null;
+      }
+    };
+    
+    if (activeHolds.size > 0 && !animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(animate);
+    } else if (activeHolds.size === 0 && animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [activeHolds.size]);
+
   // Performance metrics
   const [metrics, setMetrics] = useState({
     eventCount: 0,
@@ -159,8 +281,19 @@ export default function InteractiveDemo() {
       ...match,
       id: ++sequenceIdRef.current
     }, ...prev].slice(0, 10));
+    
+    // If this is a hold match, remove it from activeHolds
+    if (match.type === 'hold') {
+      setActiveHolds(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(match.sequenceId);
+        return newMap;
+      });
+    }
   }, []);
 
+  const [pressedKeyCodes, setPressedKeyCodes] = useState<Set<string>>(new Set());
+  
   const { 
     lastEvent, 
     pressedKeys, 
@@ -173,13 +306,13 @@ export default function InteractiveDemo() {
     tapHoldThreshold: 200,
     preventDefault: true, // Prevent default browser shortcuts
     sequences: showSequences ? {
-      sequences: DEMO_SEQUENCES,
+      sequences: [...getSequences(customHoldTime), ...customSequences],
       onSequenceMatch: handleSequenceMatch,
       debug: debugMode
     } : undefined
   });
 
-  // Track event history
+  // Track event history and key codes
   useEffect(() => {
     if (lastEvent) {
       const startTime = performance.now();
@@ -205,6 +338,64 @@ export default function InteractiveDemo() {
         setRecordedKeys(prev => [...prev, lastEvent.key]);
       }
 
+      // Track hold progress
+      if (lastEvent.type === 'keydown') {
+        // Check if any hold sequences match this key
+        [...getSequences(customHoldTime), ...customSequences].forEach(seq => {
+          if (seq.type === 'hold') {
+            const keyDef = seq.keys[0];
+            const targetKey = typeof keyDef === 'string' ? keyDef : keyDef.key;
+            const minHoldTime = typeof keyDef === 'object' ? keyDef.minHoldTime : 1000;
+            
+            if (targetKey === lastEvent.key) {
+              // Check modifiers if specified
+              if (typeof keyDef === 'object' && keyDef.modifiers) {
+                const modsMatch = Object.entries(keyDef.modifiers).every(([mod, value]) => 
+                  lastEvent.activeModifiers[mod as keyof typeof lastEvent.activeModifiers] === value
+                );
+                if (!modsMatch) return;
+              }
+              
+              if (debugMode) {
+                console.log(`[Demo] Starting hold tracking for ${seq.id}, key: ${targetKey}, minHoldTime: ${minHoldTime}`);
+              }
+              
+              setActiveHolds(prev => {
+                const newMap = new Map(prev);
+                newMap.set(seq.id, { startTime: Date.now(), minHoldTime: minHoldTime || 1000 });
+                return newMap;
+              });
+              
+              // Don't set a timer to auto-remove - let the sequence match or keyup handle it
+            }
+          }
+        });
+      } else if (lastEvent.type === 'keyup') {
+        // Clear holds for this key
+        [...getSequences(customHoldTime), ...customSequences].forEach(seq => {
+          if (seq.type === 'hold') {
+            const keyDef = seq.keys[0];
+            const targetKey = typeof keyDef === 'string' ? keyDef : keyDef.key;
+            
+            if (targetKey === lastEvent.key) {
+              // Check modifiers if specified
+              if (typeof keyDef === 'object' && keyDef.modifiers) {
+                const modsMatch = Object.entries(keyDef.modifiers).every(([mod, value]) => 
+                  lastEvent.activeModifiers[mod as keyof typeof lastEvent.activeModifiers] === value
+                );
+                if (!modsMatch) return;
+              }
+              
+              setActiveHolds(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(seq.id);
+                return newMap;
+              });
+            }
+          }
+        });
+      }
+
       // Update metrics
       const processTime = performance.now() - startTime;
       processTimesRef.current.push(processTime);
@@ -217,6 +408,17 @@ export default function InteractiveDemo() {
         avgProcessTime: processTimesRef.current.reduce((a, b) => a + b, 0) / processTimesRef.current.length,
         lastProcessTime: processTime
       }));
+      
+      // Track key codes for virtual keyboard
+      if (lastEvent.type === 'keydown') {
+        setPressedKeyCodes(prev => new Set([...prev, lastEvent.code]));
+      } else if (lastEvent.type === 'keyup') {
+        setPressedKeyCodes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(lastEvent.code);
+          return newSet;
+        });
+      }
     }
   }, [lastEvent, recordingSequence]);
 
@@ -250,13 +452,15 @@ export default function InteractiveDemo() {
         timeout: 1000
       };
       sequences?.addSequence(sequenceDef);
+      setCustomSequences(prev => [...prev, sequenceDef]);
       setCustomSequence(recordedKeys.join(' → '));
     }
   };
 
   const clearCustomSequences = () => {
     sequences?.clearSequences();
-    DEMO_SEQUENCES.forEach(seq => sequences?.addSequence(seq));
+    getSequences(customHoldTime).forEach(seq => sequences?.addSequence(seq));
+    setCustomSequences([]);
     setCustomSequence('');
   };
 
@@ -368,21 +572,34 @@ export default function InteractiveDemo() {
 
           <div className="numpad">
             <h3>Numpad</h3>
-            {NUMPAD_LAYOUT.map((row, rowIdx) => (
-              <div key={rowIdx} className="numpad-row">
-                {row.map((key, keyIdx) => (
-                  <button
-                    key={`num-${rowIdx}-${keyIdx}`}
-                    className={`key numpad-key ${
-                      isKeyPressed(`Numpad${key}`) ? 'active' : ''
-                    }`}
-                    disabled
-                  >
-                    {key}
-                  </button>
-                ))}
-              </div>
-            ))}
+            <div className="numpad-grid">
+              {/* Row 1 */}
+              <button className={`key numpad-key ${pressedKeyCodes.has('NumLock') ? 'active' : ''}`} disabled>NumLock</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('NumpadDivide') ? 'active' : ''}`} disabled>/</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('NumpadMultiply') ? 'active' : ''}`} disabled>*</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('NumpadSubtract') ? 'active' : ''}`} disabled>-</button>
+              
+              {/* Row 2 */}
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad7') ? 'active' : ''}`} disabled>7</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad8') ? 'active' : ''}`} disabled>8</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad9') ? 'active' : ''}`} disabled>9</button>
+              <button className={`key numpad-key numpad-tall ${pressedKeyCodes.has('NumpadAdd') ? 'active' : ''}`} disabled>+</button>
+              
+              {/* Row 3 */}
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad4') ? 'active' : ''}`} disabled>4</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad5') ? 'active' : ''}`} disabled>5</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad6') ? 'active' : ''}`} disabled>6</button>
+              
+              {/* Row 4 */}
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad1') ? 'active' : ''}`} disabled>1</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad2') ? 'active' : ''}`} disabled>2</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('Numpad3') ? 'active' : ''}`} disabled>3</button>
+              <button className={`key numpad-key numpad-tall ${pressedKeyCodes.has('NumpadEnter') ? 'active' : ''}`} disabled>Enter</button>
+              
+              {/* Row 5 */}
+              <button className={`key numpad-key numpad-wide ${pressedKeyCodes.has('Numpad0') ? 'active' : ''}`} disabled>0</button>
+              <button className={`key numpad-key ${pressedKeyCodes.has('NumpadDecimal') ? 'active' : ''}`} disabled>.</button>
+            </div>
           </div>
         </section>
 
@@ -408,6 +625,14 @@ export default function InteractiveDemo() {
                 <div><strong>Type:</strong> <span className={`event-type-${lastEvent.type}`}>{lastEvent.type}</span></div>
                 <div><strong>Key:</strong> {lastEvent.key} {lastEvent.originalKey !== lastEvent.key && `(original: ${lastEvent.originalKey})`}</div>
                 <div><strong>Code:</strong> {lastEvent.code}</div>
+                {Object.entries(lastEvent.activeModifiers).some(([_, active]) => active) && (
+                  <div>
+                    <strong>Active Modifiers:</strong> {Object.entries(lastEvent.activeModifiers)
+                      .filter(([_, active]) => active)
+                      .map(([mod]) => mod.charAt(0).toUpperCase() + mod.slice(1))
+                      .join(', ')}
+                  </div>
+                )}
                 {lastEvent.isModifier && <div className="event-tag">Modifier</div>}
                 {lastEvent.isRepeat && <div className="event-tag">Repeat</div>}
                 {lastEvent.isNumpad && <div className="event-tag">Numpad</div>}
@@ -502,6 +727,103 @@ export default function InteractiveDemo() {
           </div>
         </section>
 
+        {/* Hold Detection Examples */}
+        {showSequences && (
+          <section className="demo-section hold-examples-section">
+            <h2>Hold Detection Examples</h2>
+            <div className="hold-examples-grid">
+              <div className="hold-example">
+                <h3>🎮 Charge Jump</h3>
+                <p>Hold Space to charge your jump</p>
+                <div className="hold-indicator">
+                  <div className="charge-meter">
+                    <HoldProgressBar 
+                      sequenceId="charge-jump" 
+                      activeHolds={activeHolds} 
+                      animationTick={animationTick}
+                    />
+                  </div>
+                  <span className="hold-key">Hold SPACE</span>
+                </div>
+              </div>
+              
+              <div className="hold-example">
+                <h3>⚔️ Power Attack</h3>
+                <p>Hold F to charge a powerful attack</p>
+                <div className="hold-indicator">
+                  <div className="charge-meter">
+                    <HoldProgressBar 
+                      sequenceId="power-attack" 
+                      activeHolds={activeHolds} 
+                      animationTick={animationTick}
+                    />
+                  </div>
+                  <span className="hold-key">Hold F</span>
+                </div>
+              </div>
+
+              <div className="hold-example">
+                <h3>🥊 Heavy Punch</h3>
+                <p>Fighting game style heavy attack</p>
+                <div className="hold-indicator">
+                  <div className="charge-meter">
+                    <HoldProgressBar 
+                      sequenceId="heavy-punch" 
+                      activeHolds={activeHolds} 
+                      animationTick={animationTick}
+                    />
+                  </div>
+                  <span className="hold-key">Hold H</span>
+                </div>
+              </div>
+
+              <div className="hold-example">
+                <h3>✨ Special Move</h3>
+                <p>Complex fighting game combo</p>
+                <div className="hold-indicator">
+                  <div className="charge-meter">
+                    <HoldProgressBar 
+                      sequenceId="special-move" 
+                      activeHolds={activeHolds} 
+                      animationTick={animationTick}
+                    />
+                  </div>
+                  <span className="hold-key">Hold CTRL+S</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Custom Hold Configuration */}
+            <div className="custom-hold-config">
+              <h3>🔧 Custom Hold Configuration</h3>
+              <div className="config-controls">
+                <label>
+                  Hold Duration (ms):
+                  <input 
+                    type="range" 
+                    min="100" 
+                    max="2000" 
+                    step="50"
+                    value={customHoldTime} 
+                    onChange={(e) => setCustomHoldTime(Number(e.target.value))}
+                  />
+                  <span className="config-value">{customHoldTime}ms</span>
+                </label>
+                <div className="hold-indicator">
+                  <div className="charge-meter">
+                    <HoldProgressBar 
+                      sequenceId="custom-hold" 
+                      activeHolds={activeHolds} 
+                      animationTick={animationTick}
+                    />
+                  </div>
+                  <span className="hold-key">Hold X to test custom duration</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Sequence Detection */}
         {showSequences && (
           <section className="demo-section sequence-section">
@@ -518,7 +840,7 @@ export default function InteractiveDemo() {
                 </button>
               )}
               <button onClick={clearCustomSequences} className="btn btn-secondary">
-                Reset Sequences
+                Reset Custom Sequences
               </button>
             </div>
 
@@ -530,16 +852,63 @@ export default function InteractiveDemo() {
 
             <div className="sequence-list">
               <h3>Available Sequences</h3>
-              {DEMO_SEQUENCES.map(seq => (
-                <div key={seq.id} className="sequence-item">
-                  <strong>{seq.name}:</strong> {
-                    seq.keys.map(k => typeof k === 'string' ? k : k.key).join(
-                      seq.type === 'chord' ? ' + ' : ' → '
-                    )
-                  }
-                  <span className="sequence-type">{seq.type}</span>
-                </div>
-              ))}
+              {[...getSequences(customHoldTime), ...customSequences].map(seq => {
+                const holdInfo = activeHolds.get(seq.id);
+                const isHolding = !!holdInfo;
+                const progress = isHolding ? 
+                  Math.min(100, Math.max(0, ((Date.now() - holdInfo.startTime) / holdInfo.minHoldTime) * 100)) : 0;
+                
+                return (
+                  <div key={seq.id} className="sequence-item" style={{ position: 'relative' }}>
+                    {isHolding && (
+                      <div 
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: `linear-gradient(to right, rgba(62, 175, 124, 0.2) ${progress}%, transparent ${progress}%)`,
+                          borderRadius: '4px',
+                          transition: 'none'
+                        }}
+                      />
+                    )}
+                    <strong>{seq.name}:</strong> {
+                      (() => {
+                        if (seq.type === 'hold') {
+                          const keyDef = seq.keys[0];
+                          const key = typeof keyDef === 'string' ? keyDef : keyDef.key;
+                          const displayKey = key === ' ' ? 'SPACE' : key.toUpperCase();
+                          const holdTime = typeof keyDef === 'object' ? keyDef.minHoldTime : 1000;
+                          const modifiers = typeof keyDef === 'object' && keyDef.modifiers ? 
+                            Object.entries(keyDef.modifiers)
+                              .filter(([_, v]) => v)
+                              .map(([k]) => k === 'ctrl' ? 'CTRL' : k.toUpperCase())
+                              .join('+') + '+' : '';
+                          return `Hold ${modifiers}${displayKey} (${holdTime}ms)`;
+                        } else if (seq.type === 'chord') {
+                          return seq.keys.map(k => {
+                            const key = typeof k === 'string' ? k : k.key;
+                            return key === 'Control' ? 'Ctrl' : key;
+                          }).join(' + ');
+                        } else {
+                          return seq.keys.map(k => {
+                            const key = typeof k === 'string' ? k : k.key;
+                            return key;
+                          }).join(' → ');
+                        }
+                      })()
+                    }
+                    <span className="sequence-type">{seq.type}</span>
+                    {isHolding && (
+                      <span style={{ marginLeft: '10px', fontSize: '12px', color: '#3eaf7c' }}>
+                        {Math.round(progress)}%
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="matched-sequences">
@@ -559,7 +928,7 @@ export default function InteractiveDemo() {
         )}
 
         {/* Debug Panel */}
-        {showDebugPanel && debugMode && showSequences && sequences?.debugState && (
+        {showDebugPanel && showSequences && sequences?.debugState && (
           <section className="demo-section debug-section">
             <h2>Sequence Detection Debug Panel</h2>
             
@@ -660,33 +1029,6 @@ export default function InteractiveDemo() {
           </section>
         )}
 
-        {/* Platform Quirks */}
-        <section className="demo-section quirks-section">
-          <h2>Platform-Specific Features</h2>
-          <div className="quirks-info">
-            {platform === 'Windows' && (
-              <div className="quirk-item">
-                <h3>Windows Shift+Numpad Suppression</h3>
-                <p>Try pressing Shift + Numpad keys. Phantom Shift events are automatically suppressed.</p>
-              </div>
-            )}
-            {platform === 'macOS' && (
-              <div className="quirk-item">
-                <h3>macOS Meta Key Timeout</h3>
-                <p>The Meta (Cmd) key is handled with special timeout logic for consistent behavior.</p>
-              </div>
-            )}
-            <div className="quirk-item">
-              <h3>Modifier Tap vs Hold</h3>
-              <p>Tap or hold modifier keys to see duration detection (threshold: 200ms)</p>
-            </div>
-            <div className="quirk-item">
-              <h3>NumLock State Detection</h3>
-              <p>Numpad keys show different behavior based on NumLock state</p>
-            </div>
-          </div>
-        </section>
-
         {/* Test Input */}
         <section className="demo-section input-section">
           <h2>Test Input Field</h2>
@@ -702,6 +1044,33 @@ export default function InteractiveDemo() {
           />
         </section>
       </div>
+
+      {/* Platform Quirks */}
+      <section className="demo-section quirks-section">
+        <h2>Platform-Specific Features</h2>
+        <div className="quirks-info">
+          {platform === 'Windows' && (
+            <div className="quirk-item">
+              <h3>Windows Shift+Numpad Suppression</h3>
+              <p>Try pressing Shift + Numpad keys. Phantom Shift events are automatically suppressed.</p>
+            </div>
+          )}
+          {platform === 'macOS' && (
+            <div className="quirk-item">
+              <h3>macOS Meta Key Timeout</h3>
+              <p>The Meta (Cmd) key is handled with special timeout logic for consistent behavior.</p>
+            </div>
+          )}
+          <div className="quirk-item">
+            <h3>Modifier Tap vs Hold</h3>
+            <p>Tap or hold modifier keys to see duration detection (threshold: 200ms)</p>
+          </div>
+          <div className="quirk-item">
+            <h3>NumLock State Detection</h3>
+            <p>Numpad keys show different behavior based on NumLock state</p>
+          </div>
+        </div>
+      </section>
 
       <footer className="demo-footer">
         <p>

@@ -21,6 +21,7 @@
     "build": "vite build && tsc --emitDeclarationOnly",
     "build:demo": "vite build --config vite.demo.config.js",
     "dev": "vite build --watch",
+    "dev:demo": "vite --config vite.demo.config.js",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

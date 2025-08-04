@@ -4,9 +4,10 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/use-normalized-keys/demo/',
+  base: process.env.NODE_ENV === 'production' ? '/use-normalized-keys/demo/' : '/',
+  root: resolve(__dirname, 'demo'),
   build: {
-    outDir: 'dist-demo',
+    outDir: '../dist-demo',
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'demo/index.html')
@@ -17,5 +18,9 @@ export default defineConfig({
     alias: {
       'use-normalized-keys': resolve(__dirname, 'src/index.ts')
     }
+  },
+  server: {
+    port: 5173,
+    open: true
   }
 });
