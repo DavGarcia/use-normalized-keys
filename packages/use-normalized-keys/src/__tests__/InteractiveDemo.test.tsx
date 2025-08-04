@@ -144,12 +144,12 @@ describe('InteractiveDemo', () => {
       expect(screen.getByText('No events yet')).toBeInTheDocument();
     });
 
-    it('should call clipboard API when copy button is clicked', () => {
+    it('should call clipboard API when copy button is clicked', async () => {
       render(<InteractiveDemo />);
       
       const copyButton = screen.getByRole('button', { name: /Copy/i });
       
-      act(() => {
+      await act(async () => {
         fireEvent.click(copyButton);
       });
       
