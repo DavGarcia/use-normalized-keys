@@ -728,3 +728,20 @@ export type {
   SequenceType,
   SequenceKey
 } from './sequenceDetection';
+
+// Export helper hooks
+export { 
+  useHoldProgress,
+  useHoldAnimation,
+  useSequence
+} from './hooks';
+
+// Export sequence helper functions
+export {
+  holdSequence,
+  comboSequence,
+  chordSequence,
+  holdSequences,
+  fightingCombo,
+  rhythmSequence
+} from './sequenceHelpers';

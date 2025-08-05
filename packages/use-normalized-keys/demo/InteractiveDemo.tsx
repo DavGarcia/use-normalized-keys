@@ -1,5 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { useNormalizedKeys, SequenceDefinition, MatchedSequence } from '../src';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  useNormalizedKeys, 
+  SequenceDefinition, 
+  MatchedSequence,
+  holdSequence,
+  comboSequence,
+  chordSequence,
+  fightingCombo,
+  rhythmSequence
+} from '../src';
 import './InteractiveDemo.css';
 
 // Virtual keyboard layout
@@ -41,125 +50,47 @@ const NUMPAD_KEY_CODE_MAP: Record<string, string> = {
   '9': 'Numpad9'
 };
 
-// Predefined sequences for demo
+// Predefined sequences for demo using new helper functions
 const getSequences = (customHoldTime: number): SequenceDefinition[] => [
-  {
-    id: 'konami',
+  // Combo sequences
+  comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'], {
     name: 'Konami Code',
-    keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'],
-    type: 'sequence',
     timeout: 2000
-  },
-  {
-    id: 'save',
-    name: 'Save (Ctrl+S)',
-    keys: ['Control', 's'],
-    type: 'chord'
-  },
-  {
-    id: 'copy',
-    name: 'Copy (Ctrl+C)',
-    keys: ['Control', 'c'],
-    type: 'chord'
-  },
-  {
-    id: 'paste',
-    name: 'Paste (Ctrl+V)',
-    keys: ['Control', 'v'],
-    type: 'chord'
-  },
-  {
-    id: 'undo',
-    name: 'Undo (Ctrl+Z)',
-    keys: ['Control', 'z'],
-    type: 'chord'
-  },
-  // Hold detection examples
-  {
-    id: 'charge-jump',
-    name: 'Charge Jump (Hold Space)',
-    keys: [{ key: 'Space', minHoldTime: 750 }],
-    type: 'hold'
-  },
-  {
-    id: 'power-attack',
-    name: 'Power Attack (Hold F)',
-    keys: [{ key: 'f', minHoldTime: 1000 }],
-    type: 'hold'
-  },
-  {
-    id: 'heavy-punch',
-    name: 'Heavy Punch (Hold H)',
-    keys: [{ key: 'h', minHoldTime: 400 }],
-    type: 'hold'
-  },
-  {
-    id: 'special-move',
-    name: 'Special Move (Hold Ctrl+S)',
-    keys: [{ 
-      key: 's', 
-      minHoldTime: 600,
-      modifiers: { ctrl: true }
-    }],
-    type: 'hold'
-  },
-  {
-    id: 'select-all',
-    name: 'Select All (Ctrl+A)',
-    keys: ['Control', 'a'],
-    type: 'chord'
-  },
-  {
-    id: 'vim-escape',
-    name: 'Vim Escape (jk)',
-    keys: ['j', 'k'],
-    type: 'sequence',
-    timeout: 300
-  },
-  {
-    id: 'hello',
-    name: 'Type "hello"',
-    keys: ['h', 'e', 'l', 'l', 'o'],
-    type: 'sequence',
-    timeout: 1000
-  },
-  // Custom hold sequence
-  {
-    id: 'custom-hold',
-    name: `Custom Hold (${customHoldTime}ms)`,
-    keys: [{ key: 'x', minHoldTime: customHoldTime }],
-    type: 'hold'
-  }
-];
-
-// Memoized progress bar component to prevent unnecessary re-renders
-const HoldProgressBar = memo(({ 
-  sequenceId, 
-  currentHolds, 
-  animationTick 
-}: { 
-  sequenceId: string; 
-  currentHolds: Map<string, import('../src/index').HoldProgress>;
-  animationTick: number;
-}) => {
-  const holdInfo = currentHolds.get(sequenceId);
-  const progress = holdInfo ? holdInfo.progressPercent : 0;
+  }),
   
-  return (
-    <div 
-      className="charge-fill"
-      style={{
-        width: `${progress}%`,
-        backgroundColor: sequenceId.includes('charge') ? '#3eaf7c' : 
-                        sequenceId.includes('power') ? '#e74c3c' :
-                        sequenceId.includes('heavy') ? '#f39c12' :
-                        sequenceId.includes('special') ? '#9b59b6' :
-                        sequenceId.includes('custom') ? '#3498db' : '#3eaf7c',
-        transition: 'none'
-      }}
-    />
-  );
-});
+  // Chord sequences
+  chordSequence('save', ['Control', 's'], { name: 'Save (Ctrl+S)' }),
+  chordSequence('copy', ['Control', 'c'], { name: 'Copy (Ctrl+C)' }),
+  chordSequence('paste', ['Control', 'v'], { name: 'Paste (Ctrl+V)' }),
+  chordSequence('undo', ['Control', 'z'], { name: 'Undo (Ctrl+Z)' }),
+  chordSequence('select-all', ['Control', 'a'], { name: 'Select All (Ctrl+A)' }),
+  
+  // Hold sequences
+  holdSequence('charge-jump', ' ', 750, { name: 'Charge Jump (Hold Space)' }),
+  holdSequence('power-attack', 'f', 1000, { name: 'Power Attack (Hold F)' }),
+  holdSequence('heavy-punch', 'h', 400, { name: 'Heavy Punch (Hold H)' }),
+  holdSequence('special-move', 's', 600, { 
+    name: 'Special Move (Hold Ctrl+S)',
+    modifiers: { ctrl: true }
+  }),
+  
+  // Regular sequences
+  comboSequence('vim-escape', ['j', 'k'], {
+    name: 'Vim Escape (jk)',
+    timeout: 300
+  }),
+  comboSequence('hello', ['h', 'e', 'l', 'l', 'o'], {
+    name: 'Type "hello"',
+    timeout: 1000
+  }),
+  
+  // Additional combos removed to simplify demo
+  
+  // Custom hold sequence
+  holdSequence('custom-hold', 'x', customHoldTime, {
+    name: `Custom Hold (${customHoldTime}ms)`
+  })
+];
 
 export default function InteractiveDemo() {
   const [excludeInputs, setExcludeInputs] = useState(true);
@@ -173,13 +104,10 @@ export default function InteractiveDemo() {
   const [recordedKeys, setRecordedKeys] = useState<string[]>([]);
   const [customSequences, setCustomSequences] = useState<SequenceDefinition[]>([]);
   const [snackbar, setSnackbar] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
-  // activeHolds is now provided by the hook as currentHolds
   const [customHoldTime, setCustomHoldTime] = useState(500);
   const [showCustomHold, setShowCustomHold] = useState(false);
-  const [animationTick, setAnimationTick] = useState(0);
   const eventIdRef = useRef(0);
   const sequenceIdRef = useRef(0);
-  const animationFrameRef = useRef<number | null>(null);
   
   // Prevent default behavior for certain keys
   useEffect(() => {
@@ -263,48 +191,6 @@ export default function InteractiveDemo() {
       debug: debugMode
     } : undefined
   });
-
-  // Create ref for currentHolds after hook initialization
-  const activeHoldsRef = useRef(currentHolds);
-
-  // Keep activeHoldsRef in sync
-  useEffect(() => {
-    activeHoldsRef.current = currentHolds;
-  }, [currentHolds]);
-
-  // Smooth animation for hold progress
-  useEffect(() => {
-    let lastTime = 0;
-    const animate = (currentTime: number) => {
-      // Throttle to 60fps
-      if (currentTime - lastTime >= 16) {
-        if (activeHoldsRef.current.size > 0) {
-          setAnimationTick(prev => prev + 1);
-          lastTime = currentTime;
-        }
-      }
-      
-      if (activeHoldsRef.current.size > 0) {
-        animationFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        animationFrameRef.current = null;
-      }
-    };
-    
-    if (currentHolds.size > 0 && !animationFrameRef.current) {
-      animationFrameRef.current = requestAnimationFrame(animate);
-    } else if (currentHolds.size === 0 && animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [currentHolds.size]);
 
   // Track event history and key codes
   useEffect(() => {
@@ -490,25 +376,26 @@ export default function InteractiveDemo() {
         {/* Virtual Keyboard */}
         <section className="demo-section keyboard-section">
           <h2>Virtual Keyboard</h2>
-          <div className="keyboard">
-            {KEYBOARD_LAYOUT.map((row, rowIdx) => (
-              <div key={rowIdx} className="keyboard-row">
-                {row.map((key, keyIdx) => (
-                  <button
-                    key={`${rowIdx}-${keyIdx}`}
-                    className={`key key-${key.toLowerCase().replace(' ', 'space')} ${
-                      isKeyPressed(key) ? 'active' : ''
-                    } ${key.length > 1 ? 'special' : ''}`}
-                    disabled
-                  >
-                    {key === ' ' ? 'Space' : key}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
+          <div className="keyboard-container">
+            <div className="keyboard">
+              {KEYBOARD_LAYOUT.map((row, rowIdx) => (
+                <div key={rowIdx} className="keyboard-row">
+                  {row.map((key, keyIdx) => (
+                    <button
+                      key={`${rowIdx}-${keyIdx}`}
+                      className={`key key-${key.toLowerCase().replace(' ', 'space')} ${
+                        isKeyPressed(key) ? 'active' : ''
+                      } ${key.length > 1 ? 'special' : ''}`}
+                      disabled
+                    >
+                      {key === ' ' ? 'Space' : key}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
 
-          <div className="numpad">
+            <div className="numpad">
             <h3>Numpad</h3>
             <div className="numpad-grid">
               {/* Row 1 */}
@@ -538,6 +425,7 @@ export default function InteractiveDemo() {
               <button className={`key numpad-key numpad-wide ${pressedKeyCodes.has('Numpad0') ? 'active' : ''}`} disabled>0</button>
               <button className={`key numpad-key ${pressedKeyCodes.has('NumpadDecimal') ? 'active' : ''}`} disabled>.</button>
             </div>
+          </div>
           </div>
         </section>
 
@@ -571,16 +459,13 @@ export default function InteractiveDemo() {
                       .join(', ')}
                   </div>
                 )}
-                {lastEvent.isModifier && <div className="event-tag">Modifier</div>}
                 {lastEvent.isRepeat && <div className="event-tag">Repeat</div>}
                 {lastEvent.isNumpad && <div className="event-tag">Numpad</div>}
-                {lastEvent.duration && (
-                  <div>
-                    <strong>Duration:</strong> {lastEvent.duration}ms
-                    {lastEvent.isTap && ' (tap)'}
-                    {lastEvent.isHold && ' (hold)'}
-                  </div>
-                )}
+                <div>
+                  <strong>Duration:</strong> {lastEvent.duration ? `${lastEvent.duration}ms` : 'N/A'}
+                  {lastEvent.duration && lastEvent.isTap && ' (tap)'}
+                  {lastEvent.duration && lastEvent.isHold && ' (hold)'}
+                </div>
               </div>
             ) : (
               <div className="no-data">Press any key to start</div>
@@ -675,10 +560,13 @@ export default function InteractiveDemo() {
                 <p>Hold Space to charge your jump</p>
                 <div className="hold-indicator">
                   <div className="charge-meter">
-                    <HoldProgressBar 
-                      sequenceId="charge-jump" 
-                      currentHolds={currentHolds} 
-                      animationTick={animationTick}
+                    <div 
+                      className="charge-fill"
+                      style={{
+                        width: `${currentHolds.get('charge-jump')?.progressPercent || 0}%`,
+                        backgroundColor: '#3eaf7c',
+                        transition: 'none'
+                      }}
                     />
                   </div>
                   <span className="hold-key">Hold SPACE</span>
@@ -690,10 +578,13 @@ export default function InteractiveDemo() {
                 <p>Hold F to charge a powerful attack</p>
                 <div className="hold-indicator">
                   <div className="charge-meter">
-                    <HoldProgressBar 
-                      sequenceId="power-attack" 
-                      currentHolds={currentHolds} 
-                      animationTick={animationTick}
+                    <div 
+                      className="charge-fill"
+                      style={{
+                        width: `${currentHolds.get('power-attack')?.progressPercent || 0}%`,
+                        backgroundColor: '#e74c3c',
+                        transition: 'none'
+                      }}
                     />
                   </div>
                   <span className="hold-key">Hold F</span>
@@ -705,10 +596,13 @@ export default function InteractiveDemo() {
                 <p>Fighting game style heavy attack</p>
                 <div className="hold-indicator">
                   <div className="charge-meter">
-                    <HoldProgressBar 
-                      sequenceId="heavy-punch" 
-                      currentHolds={currentHolds} 
-                      animationTick={animationTick}
+                    <div 
+                      className="charge-fill"
+                      style={{
+                        width: `${currentHolds.get('heavy-punch')?.progressPercent || 0}%`,
+                        backgroundColor: '#f39c12',
+                        transition: 'none'
+                      }}
                     />
                   </div>
                   <span className="hold-key">Hold H</span>
@@ -720,10 +614,13 @@ export default function InteractiveDemo() {
                 <p>Complex fighting game combo</p>
                 <div className="hold-indicator">
                   <div className="charge-meter">
-                    <HoldProgressBar 
-                      sequenceId="special-move" 
-                      currentHolds={currentHolds} 
-                      animationTick={animationTick}
+                    <div 
+                      className="charge-fill"
+                      style={{
+                        width: `${currentHolds.get('special-move')?.progressPercent || 0}%`,
+                        backgroundColor: '#9b59b6',
+                        transition: 'none'
+                      }}
                     />
                   </div>
                   <span className="hold-key">Hold CTRL+S</span>
@@ -749,10 +646,13 @@ export default function InteractiveDemo() {
                 </label>
                 <div className="hold-indicator">
                   <div className="charge-meter">
-                    <HoldProgressBar 
-                      sequenceId="custom-hold" 
-                      currentHolds={currentHolds} 
-                      animationTick={animationTick}
+                    <div 
+                      className="charge-fill"
+                      style={{
+                        width: `${currentHolds.get('custom-hold')?.progressPercent || 0}%`,
+                        backgroundColor: '#3498db',
+                        transition: 'none'
+                      }}
                     />
                   </div>
                   <span className="hold-key">Hold X to test custom duration</span>
@@ -761,6 +661,7 @@ export default function InteractiveDemo() {
             </div>
           </section>
         )}
+
 
         {/* Sequence Detection */}
         {showSequences && (
@@ -832,8 +733,15 @@ export default function InteractiveDemo() {
                         } else {
                           return seq.keys.map(k => {
                             const key = typeof k === 'string' ? k : k.key;
-                            return key;
-                          }).join(' → ');
+                            // Display arrow symbols for arrow keys
+                            const displayMap: Record<string, string> = {
+                              'ArrowUp': '↑',
+                              'ArrowDown': '↓',
+                              'ArrowLeft': '←',
+                              'ArrowRight': '→'
+                            };
+                            return displayMap[key] || key;
+                          }).join(' ');
                         }
                       })()
                     }
@@ -980,11 +888,10 @@ export default function InteractiveDemo() {
             rows={3}
           />
         </section>
-      </div>
 
-      {/* Platform Quirks */}
-      <section className="demo-section quirks-section">
-        <h2>Platform-Specific Features</h2>
+        {/* Platform Quirks */}
+        <section className="demo-section quirks-section">
+          <h2>Platform-Specific Features</h2>
         <div className="quirks-info">
           {platform === 'Windows' && (
             <div className="quirk-item">
@@ -1007,7 +914,8 @@ export default function InteractiveDemo() {
             <p>Numpad keys show different behavior based on NumLock state</p>
           </div>
         </div>
-      </section>
+        </section>
+      </div>
 
       <footer className="demo-footer">
         <p>
