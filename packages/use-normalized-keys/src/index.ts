@@ -448,14 +448,8 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
       }
     }
 
-    // Check if we should prevent default for this event
+    // Calculate preventDefault for event object (this is just for reporting, actual prevention happens in event handlers)
     const shouldPrevent = shouldPreventDefault(event, preventDefault, excludeInputFields);
-    if (shouldPrevent) {
-      event.preventDefault();
-      if (debug) {
-        console.log(`[useNormalizedKeys] Prevented default for ${normalizedKey} (${type})`);
-      }
-    }
 
     // Create normalized event object
     const normalizedEvent: NormalizedKeyEvent = {
@@ -535,6 +529,15 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
         return;
       }
 
+      // Check if we should prevent default IMMEDIATELY to stop browser actions like scrolling
+      const shouldPrevent = shouldPreventDefault(event, preventDefault, excludeInputFields);
+      if (shouldPrevent) {
+        event.preventDefault();
+        if (debug) {
+          console.log(`[useNormalizedKeys] Prevented default for ${normalizeKey(event)} (keydown)`);
+        }
+      }
+
       updateKeyState(event, 'keydown');
     };
 
@@ -542,6 +545,15 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
       // Skip events from input fields if exclusion is enabled
       if (excludeInputFields && isInputElement(event.target)) {
         return;
+      }
+
+      // Check if we should prevent default IMMEDIATELY
+      const shouldPrevent = shouldPreventDefault(event, preventDefault, excludeInputFields);
+      if (shouldPrevent) {
+        event.preventDefault();
+        if (debug) {
+          console.log(`[useNormalizedKeys] Prevented default for ${normalizeKey(event)} (keyup)`);
+        }
       }
 
       updateKeyState(event, 'keyup');
@@ -770,3 +782,12 @@ export {
   fightingCombo,
   rhythmSequence
 } from './sequenceHelpers';
+
+// Export Context API
+export {
+  NormalizedKeysContext,
+  NormalizedKeysProvider,
+  useNormalizedKeysContext,
+  type NormalizedKeysContextType,
+  type NormalizedKeysProviderProps
+} from './context';

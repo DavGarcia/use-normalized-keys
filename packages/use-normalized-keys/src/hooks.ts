@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useNormalizedKeys } from './index';
+import { useNormalizedKeysContext } from './context';
 import type { CurrentHolds, HoldProgress } from './index';
 
 /**
@@ -17,7 +17,16 @@ import type { CurrentHolds, HoldProgress } from './index';
  * @returns Object with progress information and state
  */
 export function useHoldProgress(sequenceId: string) {
-  const { currentHolds } = useNormalizedKeys();
+  const context = useNormalizedKeysContext();
+  
+  if (!context) {
+    throw new Error(
+      'useHoldProgress must be used within a NormalizedKeysProvider. ' +
+      'Wrap your component tree with <NormalizedKeysProvider>...</NormalizedKeysProvider>'
+    );
+  }
+  
+  const { currentHolds } = context;
   const [smoothProgress, setSmoothProgress] = useState(0);
   const animationFrameRef = useRef<number>();
   const lastProgressRef = useRef(0);
@@ -85,7 +94,16 @@ export function useHoldProgress(sequenceId: string) {
  * @returns Object with animated values for visual feedback
  */
 export function useHoldAnimation(sequenceId: string) {
-  const { currentHolds } = useNormalizedKeys();
+  const context = useNormalizedKeysContext();
+  
+  if (!context) {
+    throw new Error(
+      'useHoldAnimation must be used within a NormalizedKeysProvider. ' +
+      'Wrap your component tree with <NormalizedKeysProvider>...</NormalizedKeysProvider>'
+    );
+  }
+  
+  const { currentHolds } = context;
   const [animatedValues, setAnimatedValues] = useState({
     progress: 0,
     scale: 1,
@@ -210,7 +228,16 @@ export function useHoldAnimation(sequenceId: string) {
  * @returns Object with sequence state and event flags
  */
 export function useSequence(sequenceId: string) {
-  const { sequences, currentHolds } = useNormalizedKeys();
+  const context = useNormalizedKeysContext();
+  
+  if (!context) {
+    throw new Error(
+      'useSequence must be used within a NormalizedKeysProvider. ' +
+      'Wrap your component tree with <NormalizedKeysProvider>...</NormalizedKeysProvider>'
+    );
+  }
+  
+  const { sequences, currentHolds } = context;
   const [eventHistory, setEventHistory] = useState<Array<{
     timestamp: number;
     type: 'started' | 'completed' | 'cancelled';

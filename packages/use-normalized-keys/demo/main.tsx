@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import InteractiveDemo from './InteractiveDemo';
+import DemoApp from './DemoApp';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <InteractiveDemo />
+    <DemoApp />
   </React.StrictMode>
 );

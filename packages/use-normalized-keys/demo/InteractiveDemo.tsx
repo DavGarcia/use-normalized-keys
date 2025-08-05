@@ -1,15 +1,88 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  useNormalizedKeys, 
+  useNormalizedKeysContext,
+  useHoldProgress,
+  useHoldAnimation,
   SequenceDefinition, 
   MatchedSequence,
-  holdSequence,
-  comboSequence,
-  chordSequence,
-  fightingCombo,
-  rhythmSequence
+  CurrentHolds,
 } from '../src';
 import './InteractiveDemo.css';
+
+// Custom hook for smooth hold progress using requestAnimationFrame
+function useSmoothHoldProgress(sequenceId: string, currentHolds: CurrentHolds) {
+  const [progress, setProgress] = useState(0);
+  const [isHolding, setIsHolding] = useState(false);
+  const animationFrameRef = useRef<number>();
+  
+  useEffect(() => {
+    const updateProgress = () => {
+      const holdInfo = currentHolds.get(sequenceId);
+      if (holdInfo) {
+        const elapsed = Date.now() - holdInfo.startTime;
+        const progress = Math.min(100, (elapsed / holdInfo.minHoldTime) * 100);
+        setProgress(progress);
+        setIsHolding(true);
+        
+        if (!holdInfo.isComplete) {
+          animationFrameRef.current = requestAnimationFrame(updateProgress);
+        }
+      } else {
+        setProgress(0);
+        setIsHolding(false);
+      }
+    };
+    
+    const holdInfo = currentHolds.get(sequenceId);
+    if (holdInfo) {
+      animationFrameRef.current = requestAnimationFrame(updateProgress);
+    } else {
+      setProgress(0);
+      setIsHolding(false);
+    }
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [currentHolds.get(sequenceId), sequenceId]);
+  
+  return { progress, isHolding };
+}
+
+// Charge Jump Indicator using smooth progress
+function ChargeJumpIndicator({ currentHolds, animationHook }: { currentHolds: CurrentHolds, animationHook: any }) {
+  const { progress, isHolding } = useSmoothHoldProgress('charge-jump', currentHolds);
+  
+  return (
+    <div className="hold-indicator">
+      <div className="charge-meter">
+        <div 
+          className="charge-fill"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: animationHook.isReady ? '#10b981' : '#3eaf7c',
+            boxShadow: `0 0 ${animationHook.glow * 20}px rgba(62, 175, 124, 0.6)`,
+            transform: `scaleY(${animationHook.scale})`,
+            opacity: animationHook.opacity,
+            transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out, background-color 0.1s ease-out, opacity 0.1s ease-out'
+          }}
+        />
+      </div>
+      <div className="hold-info">
+        <span className="hold-key">Hold SPACE</span>
+        {animationHook.isCharging && !animationHook.isReady && <span className="charging-text">⚡ Charging...</span>}
+        {animationHook.isReady && <span className="ready-text">✨ Ready!</span>}
+      </div>
+      {isHolding && (
+        <div className="hold-stats">
+          <span>{Math.round(progress)}%</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Virtual keyboard layout
 const KEYBOARD_LAYOUT = [
@@ -50,110 +123,45 @@ const NUMPAD_KEY_CODE_MAP: Record<string, string> = {
   '9': 'Numpad9'
 };
 
-// Predefined sequences for demo using new helper functions
-const getSequences = (customHoldTime: number): SequenceDefinition[] => [
-  // Combo sequences
-  comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'], {
-    name: 'Konami Code',
-    timeout: 2000
-  }),
-  
-  // Chord sequences
-  chordSequence('save', ['Control', 's'], { name: 'Save (Ctrl+S)' }),
-  chordSequence('copy', ['Control', 'c'], { name: 'Copy (Ctrl+C)' }),
-  chordSequence('paste', ['Control', 'v'], { name: 'Paste (Ctrl+V)' }),
-  chordSequence('undo', ['Control', 'z'], { name: 'Undo (Ctrl+Z)' }),
-  chordSequence('select-all', ['Control', 'a'], { name: 'Select All (Ctrl+A)' }),
-  
-  // Hold sequences
-  holdSequence('charge-jump', ' ', 750, { name: 'Charge Jump (Hold Space)' }),
-  holdSequence('power-attack', 'f', 1000, { name: 'Power Attack (Hold F)' }),
-  holdSequence('heavy-punch', 'h', 400, { name: 'Heavy Punch (Hold H)' }),
-  holdSequence('special-move', 's', 600, { 
-    name: 'Special Move (Hold Ctrl+S)',
-    modifiers: { ctrl: true }
-  }),
-  
-  // Regular sequences
-  comboSequence('vim-escape', ['j', 'k'], {
-    name: 'Vim Escape (jk)',
-    timeout: 300
-  }),
-  comboSequence('hello', ['h', 'e', 'l', 'l', 'o'], {
-    name: 'Type "hello"',
-    timeout: 1000
-  }),
-  
-  // Additional combos removed to simplify demo
-  
-  // Custom hold sequence
-  holdSequence('custom-hold', 'x', customHoldTime, {
-    name: `Custom Hold (${customHoldTime}ms)`
-  })
-];
+interface InteractiveDemoProps {
+  excludeInputs: boolean;
+  setExcludeInputs: (value: boolean) => void;
+  debugMode: boolean;
+  setDebugMode: (value: boolean) => void;
+  showSequences: boolean;
+  setShowSequences: (value: boolean) => void;
+  customHoldTime: number;
+  setCustomHoldTime: (value: number) => void;
+  customSequences: SequenceDefinition[];
+  setCustomSequences: (value: SequenceDefinition[]) => void;
+  matchedSequences: MatchedSequence[];
+  sequences: SequenceDefinition[];
+}
 
-export default function InteractiveDemo() {
-  const [excludeInputs, setExcludeInputs] = useState(true);
-  const [debugMode, setDebugMode] = useState(false);
-  const [showSequences, setShowSequences] = useState(true);
+export default function InteractiveDemo({
+  excludeInputs,
+  setExcludeInputs,
+  debugMode,
+  setDebugMode,
+  showSequences,
+  setShowSequences,
+  customHoldTime,
+  setCustomHoldTime,
+  customSequences,
+  setCustomSequences,
+  matchedSequences,
+  sequences,
+}: InteractiveDemoProps) {
   const [showDebugPanel, setShowDebugPanel] = useState(true);
   const [eventHistory, setEventHistory] = useState<any[]>([]);
-  const [matchedSequences, setMatchedSequences] = useState<MatchedSequence[]>([]);
-  const [customSequence, setCustomSequence] = useState('');
+  const [snackbar, setSnackbar] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const [recordingSequence, setRecordingSequence] = useState(false);
   const [recordedKeys, setRecordedKeys] = useState<string[]>([]);
-  const [customSequences, setCustomSequences] = useState<SequenceDefinition[]>([]);
-  const [snackbar, setSnackbar] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
-  const [customHoldTime, setCustomHoldTime] = useState(500);
-  const [showCustomHold, setShowCustomHold] = useState(false);
+  const [customSequence, setCustomSequence] = useState('');
+  const [pressedKeyCodes, setPressedKeyCodes] = useState<Set<string>>(new Set());
   const eventIdRef = useRef(0);
   const sequenceIdRef = useRef(0);
   
-  // Prevent default behavior for certain keys
-  useEffect(() => {
-    const preventDefaultKeys = ['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '];
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent navigation keys
-      if (preventDefaultKeys.includes(e.key)) {
-        e.preventDefault();
-      }
-      
-      // Prevent Ctrl+Tab (browser tab switching)
-      if (e.ctrlKey && e.key === 'Tab') {
-        e.preventDefault();
-      }
-      
-      // Prevent Ctrl+S (browser save)
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-      }
-      
-      // Prevent Ctrl+O (browser open file)
-      if (e.ctrlKey && e.key === 'o') {
-        e.preventDefault();
-      }
-      
-      // Prevent Ctrl+P (browser print)
-      if (e.ctrlKey && e.key === 'p') {
-        e.preventDefault();
-      }
-      
-      // Prevent Ctrl+A (select all) - optional, remove if you want to allow it
-      if (e.ctrlKey && e.key === 'a') {
-        e.preventDefault();
-      }
-      
-      // Prevent Ctrl+R/F5 (refresh) - optional
-      if ((e.ctrlKey && e.key === 'r') || e.key === 'F5') {
-        e.preventDefault();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   // Performance metrics
   const [metrics, setMetrics] = useState({
     eventCount: 0,
@@ -163,34 +171,44 @@ export default function InteractiveDemo() {
   const processTimesRef = useRef<number[]>([]);
 
   const handleSequenceMatch = useCallback((match: MatchedSequence) => {
-    setMatchedSequences(prev => [{
-      ...match,
-      id: ++sequenceIdRef.current
-    }, ...prev].slice(0, 10));
-    
-    // Note: activeHolds are now automatically managed by the hook's currentHolds
+    // This function is handled by DemoApp component now
+    // but we keep the interface for potential local handling
   }, []);
 
-  const [pressedKeyCodes, setPressedKeyCodes] = useState<Set<string>>(new Set());
+  // Get state from Context - this will throw if not in Provider (which is what we want)
+  const contextState = useNormalizedKeysContext();
+  
+  if (!contextState) {
+    throw new Error(
+      'InteractiveDemo must be used within a NormalizedKeysProvider. ' +
+      'The demo requires the Context Provider to function properly.'
+    );
+  }
   
   const { 
     lastEvent, 
     pressedKeys, 
     isKeyPressed, 
     activeModifiers,
-    sequences,
+    sequences: sequenceApi,
     currentHolds
-  } = useNormalizedKeys({ 
-    excludeInputFields: excludeInputs,
-    debug: debugMode,
-    tapHoldThreshold: 200,
-    preventDefault: true, // Prevent default browser shortcuts
-    sequences: showSequences ? {
-      sequences: [...getSequences(customHoldTime), ...customSequences],
-      onSequenceMatch: handleSequenceMatch,
-      debug: debugMode
-    } : undefined
-  });
+  } = contextState;
+
+  // Use the new helper hooks for hold detection examples
+  const chargeJumpProgress = useHoldProgress('charge-jump');
+  const chargeJumpAnimation = useHoldAnimation('charge-jump');
+  
+  const powerAttackProgress = useHoldProgress('power-attack');
+  const powerAttackAnimation = useHoldAnimation('power-attack');
+  
+  const heavyPunchProgress = useHoldProgress('heavy-punch');
+  const heavyPunchAnimation = useHoldAnimation('heavy-punch');
+  
+  const specialMoveProgress = useHoldProgress('special-move');
+  const specialMoveAnimation = useHoldAnimation('special-move');
+  
+  const customHoldProgress = useHoldProgress('custom-hold');
+  const customHoldAnimation = useHoldAnimation('custom-hold');
 
   // Track event history and key codes
   useEffect(() => {
@@ -217,8 +235,6 @@ export default function InteractiveDemo() {
       if (recordingSequence && lastEvent.type === 'keydown') {
         setRecordedKeys(prev => [...prev, lastEvent.key]);
       }
-
-      // Hold progress is now automatically tracked by the hook via currentHolds
 
       // Update metrics
       const processTime = performance.now() - startTime;
@@ -272,20 +288,35 @@ export default function InteractiveDemo() {
         id: `custom-${Date.now()}`,
         name: 'Custom Sequence',
         keys: recordedKeys,
-        type: 'sequence',
+        type: 'combo',
         timeout: 1000
       };
-      sequences?.addSequence(sequenceDef);
+      // Add to parent component sequences
       setCustomSequences(prev => [...prev, sequenceDef]);
       setCustomSequence(recordedKeys.join(' → '));
+      showSnackbar(`✅ Created sequence: ${recordedKeys.join(' → ')}`);
     }
   };
 
   const clearCustomSequences = () => {
-    sequences?.clearSequences();
-    getSequences(customHoldTime).forEach(seq => sequences?.addSequence(seq));
     setCustomSequences([]);
     setCustomSequence('');
+    showSnackbar('🗑️ Custom sequences cleared');
+  };
+
+  // Key display helper
+  const getKeyDisplay = (key: string) => {
+    if (key === ' ') return 'Space';
+    if (key === 'Control') return 'Ctrl';
+    if (key === 'Meta') return platform === 'macOS' ? '⌘' : '⊞';
+    if (key === 'Alt') return platform === 'macOS' ? '⌥' : 'Alt';
+    if (key === 'Shift') return '⇧';
+    if (key === 'CapsLock') return '⇪';
+    if (key === 'Enter') return '⏎';
+    if (key === 'Backspace') return '⌫';
+    if (key === 'Tab') return '⇥';
+    if (key === 'Escape') return 'Esc';
+    return key;
   };
 
   return (
@@ -323,7 +354,7 @@ export default function InteractiveDemo() {
           <strong>Events:</strong> {metrics.eventCount}
         </span>
         <span className="info-item">
-          <strong>Avg Process:</strong> {metrics.avgProcessTime.toFixed(2)}ms
+          <strong>Avg Process:</strong> {metrics.avgProcessTime?.toFixed(2) || '0.00'}ms
         </span>
         <span className="info-item">
           <strong>Pressed Keys:</strong> {pressedKeys.size}
@@ -368,6 +399,15 @@ export default function InteractiveDemo() {
           <span className="status-value enabled">✓ Enabled</span>
           <span className="status-description">
             (Browser shortcuts like F5, Ctrl+S, etc. are prevented)
+          </span>
+        </div>
+        <div className="control-item status-indicator">
+          <span className="status-label">Context Provider: </span>
+          <span className="status-value enabled">
+            ✓ Active
+          </span>
+          <span className="status-description">
+            (All hooks share state via Provider)
           </span>
         </div>
       </div>
@@ -558,19 +598,7 @@ export default function InteractiveDemo() {
               <div className="hold-example">
                 <h3>🎮 Charge Jump</h3>
                 <p>Hold Space to charge your jump</p>
-                <div className="hold-indicator">
-                  <div className="charge-meter">
-                    <div 
-                      className="charge-fill"
-                      style={{
-                        width: `${currentHolds.get('charge-jump')?.progressPercent || 0}%`,
-                        backgroundColor: '#3eaf7c',
-                        transition: 'none'
-                      }}
-                    />
-                  </div>
-                  <span className="hold-key">Hold SPACE</span>
-                </div>
+                <ChargeJumpIndicator currentHolds={currentHolds} animationHook={chargeJumpAnimation} />
               </div>
               
               <div className="hold-example">
@@ -581,13 +609,25 @@ export default function InteractiveDemo() {
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${currentHolds.get('power-attack')?.progressPercent || 0}%`,
-                        backgroundColor: '#e74c3c',
-                        transition: 'none'
+                        width: `${useSmoothHoldProgress('power-attack', currentHolds).progress}%`,
+                        backgroundColor: powerAttackAnimation.isReady ? '#dc2626' : '#ef4444',
+                        boxShadow: `0 0 ${powerAttackAnimation.glow * 25}px rgba(239, 68, 68, 0.8)`,
+                        transform: `scaleY(${powerAttackAnimation.scale})`,
+                        opacity: powerAttackAnimation.opacity,
+                        transition: 'all 0.1s ease-out'
                       }}
                     />
                   </div>
-                  <span className="hold-key">Hold F</span>
+                  <div className="hold-info">
+                    <span className="hold-key">Hold F</span>
+                    {powerAttackAnimation.isCharging && !powerAttackAnimation.isReady && <span className="charging-text">🔥 Charging...</span>}
+                    {powerAttackAnimation.isReady && <span className="ready-text shake">💥 READY!</span>}
+                  </div>
+                  {powerAttackProgress.isHolding && (
+                    <div className="hold-stats">
+                      <span>{Math.round(currentHolds.get('power-attack')?.progressPercent || 0)}%</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -599,13 +639,20 @@ export default function InteractiveDemo() {
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${currentHolds.get('heavy-punch')?.progressPercent || 0}%`,
-                        backgroundColor: '#f39c12',
-                        transition: 'none'
+                        width: `${useSmoothHoldProgress('heavy-punch', currentHolds).progress}%`,
+                        backgroundColor: heavyPunchAnimation.isReady ? '#ea580c' : '#f59e0b',
+                        boxShadow: `0 0 ${heavyPunchAnimation.glow * 15}px rgba(245, 158, 11, 0.7)`,
+                        transform: `scaleY(${heavyPunchAnimation.scale}) ${heavyPunchAnimation.shake > 0 ? `translateX(${Math.sin(Date.now() * 0.02) * heavyPunchAnimation.shake * 2}px)` : ''}`,
+                        opacity: heavyPunchAnimation.opacity,
+                        transition: 'transform 0.05s ease-out'
                       }}
                     />
                   </div>
-                  <span className="hold-key">Hold H</span>
+                  <div className="hold-info">
+                    <span className="hold-key">Hold H</span>
+                    {heavyPunchAnimation.isAnimating && !heavyPunchAnimation.isReady && <span className="charging-text">👊 Winding up...</span>}
+                    {heavyPunchAnimation.isReady && <span className="ready-text">🥊 PUNCH!</span>}
+                  </div>
                 </div>
               </div>
 
@@ -617,13 +664,20 @@ export default function InteractiveDemo() {
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${currentHolds.get('special-move')?.progressPercent || 0}%`,
-                        backgroundColor: '#9b59b6',
-                        transition: 'none'
+                        width: `${useSmoothHoldProgress('special-move', currentHolds).progress}%`,
+                        backgroundColor: specialMoveAnimation.isReady ? '#7c3aed' : '#a855f7',
+                        boxShadow: `0 0 ${specialMoveAnimation.glow * 30}px rgba(168, 85, 247, 0.9)`,
+                        transform: `scaleY(${specialMoveAnimation.scale})`,
+                        opacity: specialMoveAnimation.opacity,
+                        transition: 'all 0.1s ease-out'
                       }}
                     />
                   </div>
-                  <span className="hold-key">Hold CTRL+S</span>
+                  <div className="hold-info">
+                    <span className="hold-key">Hold CTRL+Q</span>
+                    {specialMoveAnimation.isCharging && !specialMoveAnimation.isReady && <span className="charging-text">⚡ Channeling...</span>}
+                    {specialMoveAnimation.isReady && <span className="ready-text rainbow">🌟 SPECIAL!</span>}
+                  </div>
                 </div>
               </div>
             </div>
@@ -649,19 +703,26 @@ export default function InteractiveDemo() {
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${currentHolds.get('custom-hold')?.progressPercent || 0}%`,
-                        backgroundColor: '#3498db',
-                        transition: 'none'
+                        width: `${useSmoothHoldProgress('custom-hold', currentHolds).progress}%`,
+                        backgroundColor: customHoldAnimation.isReady ? '#0891b2' : '#3b82f6',
+                        boxShadow: `0 0 ${customHoldAnimation.glow * 20}px rgba(59, 130, 246, 0.7)`,
+                        transform: `scaleY(${customHoldAnimation.scale})`,
+                        opacity: customHoldAnimation.opacity,
+                        transition: 'all 0.1s ease-out'
                       }}
                     />
                   </div>
-                  <span className="hold-key">Hold X to test custom duration</span>
+                  <div className="hold-info">
+                    <span className="hold-key">Hold X to test custom duration</span>
+                    {customHoldProgress.isHolding && (
+                      <span className="timing-info">{customHoldProgress.elapsedTime}ms / {customHoldProgress.minHoldTime}ms</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </section>
         )}
-
 
         {/* Sequence Detection */}
         {showSequences && (
@@ -683,193 +744,85 @@ export default function InteractiveDemo() {
               </button>
             </div>
 
-            {customSequence && (
-              <div className="custom-sequence">
-                <strong>Custom:</strong> {customSequence}
-              </div>
-            )}
-
-            <div className="sequence-list">
-              <h3>Available Sequences</h3>
-              {[...getSequences(customHoldTime), ...customSequences].map(seq => {
-                const holdInfo = currentHolds.get(seq.id);
-                const isHolding = !!holdInfo;
-                const progress = isHolding ? holdInfo.progressPercent : 0;
-                
-                return (
-                  <div key={seq.id} className="sequence-item" style={{ position: 'relative' }}>
-                    {isHolding && (
-                      <div 
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: `linear-gradient(to right, rgba(62, 175, 124, 0.2) ${progress}%, transparent ${progress}%)`,
-                          borderRadius: '4px',
-                          transition: 'none'
-                        }}
-                      />
-                    )}
-                    <strong>{seq.name}:</strong> {
-                      (() => {
-                        if (seq.type === 'hold') {
-                          const keyDef = seq.keys[0];
-                          const key = typeof keyDef === 'string' ? keyDef : keyDef.key;
-                          const displayKey = key === ' ' ? 'SPACE' : key.toUpperCase();
-                          const holdTime = typeof keyDef === 'object' ? keyDef.minHoldTime : 1000;
-                          const modifiers = typeof keyDef === 'object' && keyDef.modifiers ? 
-                            Object.entries(keyDef.modifiers)
-                              .filter(([_, v]) => v)
-                              .map(([k]) => k === 'ctrl' ? 'CTRL' : k.toUpperCase())
-                              .join('+') + '+' : '';
-                          return `Hold ${modifiers}${displayKey} (${holdTime}ms)`;
-                        } else if (seq.type === 'chord') {
-                          return seq.keys.map(k => {
-                            const key = typeof k === 'string' ? k : k.key;
-                            return key === 'Control' ? 'Ctrl' : key;
-                          }).join(' + ');
-                        } else {
-                          return seq.keys.map(k => {
-                            const key = typeof k === 'string' ? k : k.key;
-                            // Display arrow symbols for arrow keys
-                            const displayMap: Record<string, string> = {
-                              'ArrowUp': '↑',
-                              'ArrowDown': '↓',
-                              'ArrowLeft': '←',
-                              'ArrowRight': '→'
+            <div className="sequences-grid">
+              <div className="sequence-list">
+                <h3>Available Sequences</h3>
+                {sequences.map(seq => {
+                  const holdInfo = currentHolds.get(seq.id);
+                  const isHolding = !!holdInfo;
+                  const progress = isHolding ? holdInfo.progressPercent : 0;
+                  
+                  return (
+                    <div key={seq.id} className="sequence-item" style={{ position: 'relative' }}>
+                      {isHolding && (
+                        <div 
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: `linear-gradient(to right, rgba(59, 130, 246, 0.1) ${progress}%, transparent ${progress}%)`,
+                            borderRadius: '6px',
+                            pointerEvents: 'none'
+                          }}
+                        />
+                      )}
+                      <div className="sequence-content">
+                        <div className="sequence-main">
+                          <span className="sequence-name">{seq.name || seq.id}</span>
+                          <span className="sequence-type-badge">
+                            {seq.type === 'hold' && <span className="sequence-type">Hold</span>}
+                            {seq.type === 'chord' && <span className="sequence-type">Chord</span>}
+                            {seq.type === 'combo' && <span className="sequence-type">Combo</span>}
+                          </span>
+                        </div>
+                        <div className="sequence-keys-row">
+                          <span className="sequence-keys">{seq.keys.map(key => {
+                            const formatKey = (keyStr: string) => {
+                              // Replace arrow key names with actual arrows
+                              const arrowMap: { [key: string]: string } = {
+                                'ArrowUp': '↑',
+                                'ArrowDown': '↓', 
+                                'ArrowLeft': '←',
+                                'ArrowRight': '→',
+                                ' ': 'Space'
+                              };
+                              return arrowMap[keyStr] || keyStr;
                             };
-                            return displayMap[key] || key;
-                          }).join(' ');
-                        }
-                      })()
-                    }
-                    <span className="sequence-type">{seq.type}</span>
-                    {isHolding && (
-                      <span style={{ marginLeft: '10px', fontSize: '12px', color: '#3eaf7c' }}>
-                        {Math.round(progress)}%
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="matched-sequences">
-              <h3>Matched Sequences</h3>
-              {matchedSequences.length === 0 ? (
-                <div className="no-data">Try typing one of the sequences above!</div>
-              ) : (
-                matchedSequences.map(match => (
-                  <div key={match.id} className="match-item">
-                    <strong>{match.sequenceName || match.sequenceId}</strong>
-                    <span className="match-time">{match.duration}ms</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Debug Panel */}
-        {showDebugPanel && showSequences && sequences?.debugState && (
-          <section className="demo-section debug-section">
-            <h2>Sequence Detection Debug Panel</h2>
-            
-            <div className="debug-grid">
-              {/* Current Sequence */}
-              <div className="debug-box">
-                <h3>Current Sequence</h3>
-                {sequences.debugState.currentSequence.length === 0 ? (
-                  <div className="no-data">No active sequence</div>
-                ) : (
-                  <div className="sequence-debug">
-                    <div className="debug-item">
-                      <strong>Keys:</strong> {sequences.debugState.currentSequence.map(e => e.key).join(' → ')}
-                    </div>
-                    <div className="debug-item">
-                      <strong>Started:</strong> {
-                        sequences.debugState.sequenceStartTime 
-                          ? `${Date.now() - sequences.debugState.sequenceStartTime}ms ago`
-                          : 'N/A'
-                      }
-                    </div>
-                    <div className="debug-item">
-                      <strong>Last Key:</strong> {Date.now() - sequences.debugState.lastKeyTime}ms ago
-                    </div>
-                    <div className="debug-item">
-                      <strong>Length:</strong> {sequences.debugState.currentSequence.length}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Chord Detection */}
-              <div className="debug-box">
-                <h3>Chord Detection</h3>
-                <div className="debug-item">
-                  <strong>Active Keys:</strong> {
-                    sequences.debugState.activeChordKeys.size === 0 
-                      ? 'None'
-                      : Array.from(sequences.debugState.activeChordKeys).join(' + ')
-                  }
-                </div>
-                <div className="debug-item">
-                  <strong>Potential Chord:</strong> {
-                    sequences.debugState.potentialChord.length === 0
-                      ? 'None'
-                      : sequences.debugState.potentialChord.map(e => e.key).join(' + ')
-                  }
-                </div>
-                <div className="debug-item">
-                  <strong>Chord Started:</strong> {
-                    sequences.debugState.chordStartTime 
-                      ? `${Date.now() - sequences.debugState.chordStartTime}ms ago`
-                      : 'N/A'
-                  }
-                </div>
-                <div className="debug-item">
-                  <strong>Already Matched:</strong> {sequences.debugState.chordMatched ? 'Yes' : 'No'}
-                </div>
-              </div>
-
-              {/* Hold Detection */}
-              <div className="debug-box">
-                <h3>Hold Detection</h3>
-                {sequences.debugState.heldKeys.size === 0 ? (
-                  <div className="no-data">No keys being held</div>
-                ) : (
-                  <div className="held-keys">
-                    {Array.from(sequences.debugState.heldKeys.entries()).map(([key, data]) => (
-                      <div key={key} className="debug-item">
-                        <strong>{key}:</strong> {Date.now() - data.startTime}ms
+                            
+                            if (typeof key === 'string') return formatKey(key);
+                            
+                            // Handle SequenceKey objects with modifiers
+                            const modifiers = [];
+                            if (key.modifiers?.ctrl) modifiers.push('Ctrl');
+                            if (key.modifiers?.shift) modifiers.push('Shift');
+                            if (key.modifiers?.alt) modifiers.push('Alt');
+                            if (key.modifiers?.meta) modifiers.push('Meta');
+                            
+                            const formattedKey = formatKey(key.key);
+                            return modifiers.length > 0 ? `${modifiers.join('+')}+${formattedKey}` : formattedKey;
+                          }).join(' ')}</span>
+                          {isHolding && <span className="sequence-progress">{Math.round(progress)}%</span>}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Recent Matches */}
-              <div className="debug-box">
-                <h3>Recent Matches ({sequences.debugState.recentMatches.length})</h3>
-                {sequences.debugState.recentMatches.length === 0 ? (
-                  <div className="no-data">No recent matches</div>
-                ) : (
-                  <div className="recent-matches">
-                    {sequences.debugState.recentMatches.slice(0, 5).map((match, index) => (
-                      <div key={index} className="debug-item">
-                        <strong>{match.sequenceName || match.sequenceId}:</strong> {match.duration}ms ago
-                      </div>
-                    ))}
+              <div className="matched-sequences">
+                <h3>Matched Sequences</h3>
+                {matchedSequences.slice().reverse().map((match, index) => (
+                  <div key={`${match.sequenceId}-${match.matchedAt}`} className="match-item">
+                    <span className="match-name">{match.sequenceName || match.sequenceId}</span>
+                    <span className="match-time">{new Date(match.matchedAt).toLocaleTimeString()}</span>
                   </div>
+                ))}
+                {matchedSequences.length === 0 && (
+                  <div className="no-data">No sequences matched yet</div>
                 )}
               </div>
-            </div>
-
-            <div className="debug-note">
-              <em>Debug panel shows real-time internal state of sequence detection engine. 
-              Enable debug mode and sequence detection to see data.</em>
             </div>
           </section>
         )}
@@ -877,44 +830,105 @@ export default function InteractiveDemo() {
         {/* Test Input */}
         <section className="demo-section input-section">
           <h2>Test Input Field</h2>
+          <p>Type here to test the "Exclude Input Fields" option:</p>
           <input 
             type="text" 
             className="test-input"
-            placeholder={excludeInputs ? "Keys typed here are NOT tracked" : "Keys typed here ARE tracked"}
+            placeholder={excludeInputs ? "Keys won't be captured while typing here" : "Keys will still be captured"}
           />
           <textarea 
             className="test-textarea"
-            placeholder={excludeInputs ? "Text area input is NOT tracked" : "Text area input IS tracked"}
+            placeholder={excludeInputs ? "Keyboard events excluded in textareas too" : "Keyboard events still captured"}
             rows={3}
           />
         </section>
 
-        {/* Platform Quirks */}
-        <section className="demo-section quirks-section">
+        {/* Debug Panel */}
+        {showDebugPanel && (
+          <section className="demo-section debug-section">
+            <h2>Context Provider Debug Panel</h2>
+          <div className="debug-grid">
+            <div className="debug-box">
+              <h3>Provider Status</h3>
+              <div className="debug-item">
+                <strong>Active:</strong> <span className="status-indicator active">Yes</span>
+              </div>
+              <div className="debug-item">
+                <strong>State Source:</strong> NormalizedKeysContext
+              </div>
+              <div className="debug-item">
+                <strong>Helper Hooks:</strong> Enabled
+              </div>
+            </div>
+            
+            <div className="debug-box">
+              <h3>Shared State Info</h3>
+              <div className="debug-item">
+                <strong>Pressed Keys:</strong> {pressedKeys.size}
+              </div>
+              <div className="debug-item">
+                <strong>Active Holds:</strong> {currentHolds.size}
+              </div>
+              <div className="debug-item">
+                <strong>Active Modifiers:</strong> {Object.entries(activeModifiers).filter(([_, v]) => v).map(([k]) => k).join(', ') || 'None'}
+              </div>
+            </div>
+
+            <div className="debug-box">
+              <h3>Performance</h3>
+              <div className="debug-item">
+                <strong>Single Instance:</strong> <span className="status-indicator active">✓</span>
+              </div>
+              <div className="debug-item">
+                <strong>Event Listeners:</strong> 1 set
+              </div>
+              <div className="debug-item">
+                <strong>Re-renders:</strong> Optimized
+              </div>
+            </div>
+          </div>
+          </section>
+        )}
+
+        {/* Platform Info */}
+        <section className="demo-section platform-section">
           <h2>Platform-Specific Features</h2>
-        <div className="quirks-info">
-          {platform === 'Windows' && (
+          <div className="quirks-info">
             <div className="quirk-item">
-              <h3>Windows Shift+Numpad Suppression</h3>
-              <p>Try pressing Shift + Numpad keys. Phantom Shift events are automatically suppressed.</p>
+              <h3>Platform Info</h3>
+              <div className="info-item">
+                <strong>Platform:</strong> {platform}
+              </div>
+              <div className="info-item">
+                <strong>Events:</strong> {metrics.eventCount}
+              </div>
+              <div className="info-item">
+                <strong>Avg Processing:</strong> {metrics.avgProcessTime?.toFixed(2) || '0.00'}ms
+              </div>
             </div>
-          )}
-          {platform === 'macOS' && (
+            {platform === 'Windows' && (
+              <div className="quirk-item">
+                <h3>Windows Shift Phantom Events</h3>
+                <p>Phantom Shift events from Windows key combinations are automatically suppressed.</p>
+              </div>
+            )}
+            {platform === 'macOS' && (
+              <div className="quirk-item">
+                <h3>macOS Meta Key Timeout</h3>
+                <p>The Meta (Cmd) key is handled with special timeout logic for consistent behavior.</p>
+              </div>
+            )}
             <div className="quirk-item">
-              <h3>macOS Meta Key Timeout</h3>
-              <p>The Meta (Cmd) key is handled with special timeout logic for consistent behavior.</p>
+              <h3>Modifier Tap vs Hold</h3>
+              <p>Tap or hold modifier keys to see duration detection (threshold: 200ms)</p>
             </div>
-          )}
-          <div className="quirk-item">
-            <h3>Modifier Tap vs Hold</h3>
-            <p>Tap or hold modifier keys to see duration detection (threshold: 200ms)</p>
+            <div className="quirk-item">
+              <h3>NumLock State Detection</h3>
+              <p>Numpad keys show different behavior based on NumLock state</p>
+            </div>
           </div>
-          <div className="quirk-item">
-            <h3>NumLock State Detection</h3>
-            <p>Numpad keys show different behavior based on NumLock state</p>
-          </div>
-        </div>
         </section>
+
       </div>
 
       <footer className="demo-footer">
