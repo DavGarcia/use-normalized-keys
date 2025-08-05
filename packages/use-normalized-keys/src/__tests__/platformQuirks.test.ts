@@ -43,11 +43,148 @@ describe('platformQuirks', () => {
       expect(Platform.isMac).toBe(false);
       expect(Platform.isLinux).toBe(true);
     });
+
+    it('should safely handle missing navigator global in non-browser environments', () => {
+      // Mock a Node.js-like environment where navigator is undefined
+      const originalNavigator = global.navigator;
+      (global as any).navigator = undefined;
+
+      // Platform detection should not throw and should return false for all platforms
+      expect(() => Platform.isWin).not.toThrow();
+      expect(() => Platform.isMac).not.toThrow();
+      expect(() => Platform.isLinux).not.toThrow();
+      
+      expect(Platform.isWin).toBe(false);
+      expect(Platform.isMac).toBe(false);
+      expect(Platform.isLinux).toBe(false);
+
+      // Restore original navigator
+      global.navigator = originalNavigator;
+    });
+
+    it('should safely handle navigator with missing properties', () => {
+      const originalNavigator = global.navigator;
+      // Mock navigator with missing platform and userAgent
+      (global as any).navigator = {};
+
+      expect(() => Platform.isWin).not.toThrow();
+      expect(() => Platform.isMac).not.toThrow();
+      expect(() => Platform.isLinux).not.toThrow();
+      
+      expect(Platform.isWin).toBe(false);
+      expect(Platform.isMac).toBe(false);
+      expect(Platform.isLinux).toBe(false);
+
+      global.navigator = originalNavigator;
+    });
+
+    it('should use fallback detection when platform is undefined but userAgent is available', () => {
+      const originalNavigator = global.navigator;
+      (global as any).navigator = {
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      };
+
+      expect(Platform.isWin).toBe(true);
+      expect(Platform.isMac).toBe(false);
+      expect(Platform.isLinux).toBe(false);
+
+      global.navigator = originalNavigator;
+    });
   });
 
   describe('Windows Shift+Numpad phantom event suppression', () => {
     beforeEach(() => {
       mockPlatform('Windows');
+    });
+
+    describe('Debug logging control', () => {
+      let consoleLogSpy: any;
+      
+      beforeEach(() => {
+        consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      });
+
+      afterEach(() => {
+        consoleLogSpy.mockRestore();
+      });
+
+      it('should log debug messages when debug flag is enabled', () => {
+        const keyStates = new Map();
+        
+        const event = createKeyboardEvent('keydown', {
+          key: 'Shift',
+          code: 'ShiftLeft',
+          timeStamp: 1000
+        });
+
+        // Call with debug enabled
+        shouldSuppressWindowsShiftPhantom(event, keyStates, quirkState, true);
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[platformQuirks] keydown Shift ShiftLeft at 1000.0')
+        );
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[platformQuirks] Real Shift keydown')
+        );
+      });
+
+      it('should not log debug messages when debug flag is disabled', () => {
+        const keyStates = new Map();
+        
+        const event = createKeyboardEvent('keydown', {
+          key: 'Shift',
+          code: 'ShiftLeft',
+          timeStamp: 1000
+        });
+
+        // Call with debug disabled
+        shouldSuppressWindowsShiftPhantom(event, keyStates, quirkState, false);
+
+        expect(consoleLogSpy).not.toHaveBeenCalled();
+      });
+
+      it('should not log debug messages when debug flag is undefined (default)', () => {
+        const keyStates = new Map();
+        
+        const event = createKeyboardEvent('keydown', {
+          key: 'Shift',
+          code: 'ShiftLeft',
+          timeStamp: 1000
+        });
+
+        // Call with debug undefined (current behavior)
+        shouldSuppressWindowsShiftPhantom(event, keyStates, quirkState);
+
+        // Should not log in production mode
+        expect(consoleLogSpy).not.toHaveBeenCalled();
+      });
+
+      it('should respect debug flag for phantom event suppression logs', () => {
+        const keyStates = new Map();
+        keyStates.set('Shift', { isDown: true });
+        quirkState.windowsShiftQuirks.shiftIsDown = true;
+        quirkState.windowsShiftQuirks.numpadUpTime = 1000;
+        
+        const phantomEvent = createKeyboardEvent('keydown', {
+          key: 'Shift',
+          code: 'ShiftLeft',
+          timeStamp: 1005 // Within 10ms window
+        });
+
+        // Call with debug enabled
+        shouldSuppressWindowsShiftPhantom(phantomEvent, keyStates, quirkState, true);
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Suppressing phantom Shift keydown')
+        );
+
+        consoleLogSpy.mockClear();
+
+        // Call with debug disabled
+        shouldSuppressWindowsShiftPhantom(phantomEvent, keyStates, quirkState, false);
+
+        expect(consoleLogSpy).not.toHaveBeenCalled();
+      });
     });
 
     it('should suppress phantom Shift UP when Shift is still physically held', () => {
@@ -913,6 +1050,18 @@ describe('platformQuirks', () => {
     });
   });
 
+  describe('Dead code verification', () => {
+    it('should confirm dead code has been successfully removed', () => {
+      // Verify suspiciousKeyStates no longer exists in the quirk state
+      expect((quirkState as any).suspiciousKeyStates).toBeUndefined();
+      
+      // Verify the quirk state only contains the expected properties
+      const expectedKeys = ['windowsShiftQuirks', 'macOSMetaTimeoutId', 'macOSMetaLastActivity'];
+      const actualKeys = Object.keys(quirkState);
+      expect(actualKeys.sort()).toEqual(expectedKeys.sort());
+    });
+  });
+
   describe('cleanupPlatformQuirks', () => {
     it('should clean up all state and timers', () => {
       // Set up some state
@@ -925,7 +1074,6 @@ describe('platformQuirks', () => {
         timestamp: 1000
       });
       quirkState.macOSMetaTimeoutId = setTimeout(() => {}, 1000) as any;
-      quirkState.suspiciousKeyStates.set('Meta', Date.now());
 
       cleanupPlatformQuirks(quirkState);
 
@@ -933,7 +1081,6 @@ describe('platformQuirks', () => {
       expect(quirkState.windowsShiftQuirks.shiftIsDown).toBe(false);
       expect(quirkState.windowsShiftQuirks.recentEvents.length).toBe(0);
       expect(quirkState.macOSMetaTimeoutId).toBeNull();
-      expect(quirkState.suspiciousKeyStates.size).toBe(0);
     });
   });
 
@@ -948,7 +1095,6 @@ describe('platformQuirks', () => {
         code: 'ShiftLeft',
         timestamp: 1000
       });
-      quirkState.suspiciousKeyStates.set('Meta', Date.now());
 
       const debugInfo = getPlatformDebugInfo(quirkState);
 
@@ -956,7 +1102,8 @@ describe('platformQuirks', () => {
       expect(debugInfo.quirks.windowsShiftBuffered).toBe(false); // No buffer active
       expect(debugInfo.quirks.windowsShiftIsDown).toBe(true);
       expect(debugInfo.quirks.windowsRecentEvents).toBe(1);
-      expect(debugInfo.quirks.suspiciousKeys).toBe(1);
+      // suspiciousKeys property should no longer exist
+      expect(debugInfo.quirks).not.toHaveProperty('suspiciousKeys');
     });
   });
 });

@@ -55,12 +55,19 @@ The interactive demo includes:
    - Visual feedback for matches
    - Timing visualization
 
-4. **Advanced Features**
+4. **Hold Detection Examples**
+   - Visual hold progress bars
+   - Charge mechanics (jump, attack, etc.)
+   - Custom hold duration configuration
+   - Real-time progress tracking
+
+5. **Advanced Features**
    - Tap vs hold threshold adjustment
    - Event log with detailed information
    - preventDefault testing
    - Debug mode toggle
    - Copy state to clipboard
+   - Simplified API demonstrations
 
 ### Quick Examples from the Demo
 
@@ -140,6 +147,42 @@ function SimpleDemo() {
           <strong>🎉 Sequence Matched!</strong>
         </div>
       )}
+    </div>
+  );
+}
+```
+
+### Simplified API Example
+
+The demo also showcases our new simplified API with helper hooks:
+
+```tsx
+import { useHoldProgress, useHoldAnimation, holdSequence } from 'use-normalized-keys';
+
+function ChargeAttackDemo() {
+  const { progress, isComplete } = useHoldProgress('charge-attack');
+  const { scale, glow, shake } = useHoldAnimation('charge-attack');
+  
+  useNormalizedKeys({
+    sequences: {
+      sequences: [
+        holdSequence('charge-attack', ' ', 1500, { name: 'Charge Attack' })
+      ]
+    }
+  });
+  
+  return (
+    <div style={{
+      transform: `scale(${scale}) translateX(${shake}px)`,
+      boxShadow: glow > 0 ? `0 0 ${20 * glow}px rgba(255, 0, 0, ${glow})` : 'none',
+      padding: '20px',
+      background: isComplete ? '#ff4444' : '#444',
+      color: 'white',
+      borderRadius: '8px',
+      transition: 'background 0.3s'
+    }}>
+      <h3>Hold Space to Charge!</h3>
+      <div>{isComplete ? '💥 READY!' : `Charging: ${Math.round(progress)}%`}</div>
     </div>
   );
 }

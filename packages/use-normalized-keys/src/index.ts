@@ -104,7 +104,15 @@ function isInputElement(target: EventTarget | null): boolean {
   
   const tagName = target.tagName.toLowerCase();
   const isInput = tagName === 'input' || tagName === 'textarea';
-  const isContentEditable = target.getAttribute('contenteditable') === 'true';
+  
+  // Check for contenteditable - handle both bare attribute and explicit values
+  let isContentEditable = false;
+  if (target.hasAttribute('contenteditable')) {
+    const contentEditableValue = target.getAttribute('contenteditable');
+    // Bare contenteditable or contenteditable="true" (case-insensitive)
+    isContentEditable = contentEditableValue === '' || 
+                       contentEditableValue?.toLowerCase() === 'true';
+  }
   
   return isInput || isContentEditable;
 }
@@ -307,7 +315,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     // Perform platform-specific quirk handling and validation
     
     // 1. Check for Windows Shift+Numpad phantom events
-    const phantomResult = shouldSuppressWindowsShiftPhantom(event, keyStates, quirks);
+    const phantomResult = shouldSuppressWindowsShiftPhantom(event, keyStates, quirks, debug);
     if (phantomResult === 'suppress') {
       debugCountersRef.current.quirksHandled++;
       if (debug) {
@@ -639,11 +647,20 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     currentHoldsRef.current = currentHolds;
   }, [currentHolds]);
 
-  // Update hold progress values in real-time
+  // Update hold progress values in real-time - optimized to run only with active holds
   useEffect(() => {
+    let intervalId: number | null = null;
+    
     const updateHoldProgress = () => {
       const holds = currentHoldsRef.current;
-      if (holds.size === 0) return;
+      if (holds.size === 0) {
+        // No holds active, clear interval
+        if (intervalId !== null) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+        return;
+      }
       
       const now = Date.now();
       let hasChanges = false;
@@ -677,9 +694,17 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
       }
     };
 
-    const intervalId = setInterval(updateHoldProgress, 16); // ~60fps
-    return () => clearInterval(intervalId);
-  }, []);
+    // Start interval only when holds exist
+    if (currentHoldsRef.current.size > 0) {
+      intervalId = setInterval(updateHoldProgress, 16) as any; // ~60fps
+    }
+
+    return () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [currentHolds]); // Re-run when currentHolds changes
 
   // Build return object
   const result: NormalizedKeyState = {

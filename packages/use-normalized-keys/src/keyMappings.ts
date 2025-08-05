@@ -12,20 +12,6 @@
  * https://github.com/liftoff/HumanInput
  */
 
-// Symbol-to-digit mapping for shifted number keys
-// Based on US QWERTY layout, can be extended for other layouts
-const SYMBOL_TO_DIGIT_MAP: Record<string, string> = {
-  '!': '1',
-  '@': '2',
-  '#': '3',
-  '$': '4',
-  '%': '5',
-  '^': '6',
-  '&': '7',
-  '*': '8',
-  '(': '9',
-  ')': '0',
-};
 
 // Comprehensive symbol-to-base character mapping for all shifted keys
 // Includes both numbers and punctuation for complete key normalization
@@ -267,7 +253,6 @@ export function getModifierStates(event: KeyboardEvent) {
 
 // Export mapping tables for testing and advanced usage
 export {
-  SYMBOL_TO_DIGIT_MAP,
   SYMBOL_TO_BASE_MAP,
   NUMPAD_KEY_MAP,
   NUMPAD_NAVIGATION_MAP,

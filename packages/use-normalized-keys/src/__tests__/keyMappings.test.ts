@@ -6,7 +6,6 @@ import {
   isModifierKey,
   getModifierStates,
   getNumpadKeyInfo,
-  SYMBOL_TO_DIGIT_MAP,
   NUMPAD_KEY_MAP,
   NUMPAD_NAVIGATION_MAP,
   KEY_CODE_NORMALIZATION_MAP,
@@ -22,9 +21,13 @@ describe('keyMappings', () => {
     });
 
     it('should normalize all shift+digit symbols', () => {
-      Object.entries(SYMBOL_TO_DIGIT_MAP).forEach(([symbol, digit]) => {
+      // Test digit symbols using SYMBOL_TO_BASE_MAP (which includes digit mappings)
+      const digitSymbols = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'];
+      const expectedDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+      
+      digitSymbols.forEach((symbol, index) => {
         const event = createKeyboardEvent('keydown', { key: symbol });
-        expect(normalizeKey(event)).toBe(digit);
+        expect(normalizeKey(event)).toBe(expectedDigits[index]);
       });
     });
 
@@ -264,18 +267,7 @@ describe('keyMappings', () => {
   });
 
   describe('Mapping Tables', () => {
-    it('should have correct symbol to digit mappings', () => {
-      expect(SYMBOL_TO_DIGIT_MAP['!']).toBe('1');
-      expect(SYMBOL_TO_DIGIT_MAP['@']).toBe('2');
-      expect(SYMBOL_TO_DIGIT_MAP['#']).toBe('3');
-      expect(SYMBOL_TO_DIGIT_MAP['$']).toBe('4');
-      expect(SYMBOL_TO_DIGIT_MAP['%']).toBe('5');
-      expect(SYMBOL_TO_DIGIT_MAP['^']).toBe('6');
-      expect(SYMBOL_TO_DIGIT_MAP['&']).toBe('7');
-      expect(SYMBOL_TO_DIGIT_MAP['*']).toBe('8');
-      expect(SYMBOL_TO_DIGIT_MAP['(']).toBe('9');
-      expect(SYMBOL_TO_DIGIT_MAP[')']).toBe('0');
-    });
+    // SYMBOL_TO_DIGIT_MAP has been removed as dead code - its functionality is in SYMBOL_TO_BASE_MAP
 
     it('should have correct numpad key mappings', () => {
       expect(NUMPAD_KEY_MAP['Numpad0']).toBe('0');

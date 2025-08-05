@@ -46,7 +46,9 @@ function App() {
 
 - 📚 [Full Documentation](https://davgarcia.github.io/use-normalized-keys/)
 - 🎮 [Interactive Demo](https://davgarcia.github.io/use-normalized-keys/demo/)
-- 🔧 [API Reference](https://davgarcia.github.io/use-normalized-keys/api.html)
+- 🔧 [API Reference](#-api-reference)
+- 🎯 [Helper Hooks](#-helper-hooks)
+- 🔧 [Helper Functions](#-helper-functions)
 
 ## 🎯 Key Features
 
@@ -218,6 +220,229 @@ function GameComponent() {
 }
 ```
 
+## 🎯 Helper Hooks
+
+### useHoldProgress
+
+Track hold progress with smooth animation values for UI feedback:
+
+```tsx
+import { useHoldProgress } from 'use-normalized-keys';
+
+function ChargeJumpButton() {
+  const keys = useNormalizedKeys({
+    sequences: {
+      sequences: [
+        { id: 'charge-jump', keys: [{ key: 'Space', minHoldTime: 1000 }], type: 'hold' }
+      ]
+    }
+  });
+  
+  const progress = useHoldProgress('charge-jump');
+  
+  return (
+    <div className="charge-button">
+      <div 
+        className="progress-bar"
+        style={{ width: `${progress.progress}%` }}
+      />
+      <span>
+        {progress.isHolding ? `Charging... ${progress.remainingTime}ms` : 'Hold Space to Charge'}
+      </span>
+    </div>
+  );
+}
+```
+
+### useHoldAnimation
+
+Advanced animated hold progress with visual effects:
+
+```tsx
+import { useHoldAnimation } from 'use-normalized-keys';
+
+function AnimatedChargeButton() {
+  const keys = useNormalizedKeys({
+    sequences: {
+      sequences: [
+        { id: 'power-move', keys: [{ key: 'f', minHoldTime: 750 }], type: 'hold' }
+      ]
+    }
+  });
+  
+  const animation = useHoldAnimation('power-move');
+  
+  return (
+    <div 
+      className="power-button"
+      style={{
+        transform: `scale(${animation.scale})`,
+        opacity: animation.opacity,
+        boxShadow: animation.glow > 0 ? `0 0 ${animation.glow * 20}px #ff6b35` : 'none',
+        marginLeft: `${animation.shake}px`
+      }}
+    >
+      <div 
+        className="charge-fill"
+        style={{ width: `${animation.progress}%` }}
+      />
+      {animation.isReady && <span className="ready-indicator">READY!</span>}
+      {animation.isCharging && <span>Charging Power Move...</span>}
+    </div>
+  );
+}
+```
+
+### useSequence
+
+Game-oriented sequence tracking with event flags:
+
+```tsx
+import { useSequence, useNormalizedKeys } from 'use-normalized-keys';
+import { useEffect } from 'react';
+
+function GameCharacter() {
+  const keys = useNormalizedKeys({
+    sequences: {
+      sequences: [
+        { id: 'combo-attack', keys: ['a', 's', 'd'], type: 'sequence' },
+        { id: 'special-move', keys: [{ key: 'f', minHoldTime: 500 }], type: 'hold' }
+      ]
+    }
+  });
+  
+  const combo = useSequence('combo-attack');
+  const special = useSequence('special-move');
+  
+  // Trigger actions on sequence events
+  useEffect(() => {
+    if (combo.justCompleted) {
+      executeComboAttack();
+    }
+    if (special.justStarted) {
+      showChargingEffect();
+    }
+    if (special.justCompleted) {
+      executeSpecialMove();
+    }
+    if (special.justCancelled) {
+      hideChargingEffect();
+    }
+  }, [combo.justCompleted, special.justStarted, special.justCompleted, special.justCancelled]);
+  
+  return (
+    <div className="character">
+      <div className="status">
+        Combo Progress: {combo.progress}%
+        Special Hold: {special.isHolding ? `${special.elapsedTime}ms` : 'Ready'}
+      </div>
+    </div>
+  );
+}
+```
+
+## 🔧 Helper Functions
+
+### holdSequence
+
+Create hold sequence definitions easily:
+
+```tsx
+import { holdSequence } from 'use-normalized-keys';
+
+const sequences = [
+  holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
+  holdSequence('power-attack', 'f', 1000, { 
+    name: 'Power Attack',
+    modifiers: { ctrl: true }
+  }),
+  holdSequence('special-move', 's', 600)
+];
+
+function GameComponent() {
+  const keys = useNormalizedKeys({
+    sequences: { sequences }
+  });
+  // ... rest of component
+}
+```
+
+### comboSequence
+
+Create sequential combo definitions:
+
+```tsx
+import { comboSequence } from 'use-normalized-keys';
+
+const combos = [
+  comboSequence('konami', ['↑', '↑', '↓', '↓', '←', '→', '←', '→', 'b', 'a']),
+  comboSequence('hadouken', ['↓', '↘', '→', 'p'], { timeout: 500 }),
+  comboSequence('vim-escape', ['j', 'k'], { 
+    name: 'Vim Escape', 
+    timeout: 300 
+  })
+];
+```
+
+### chordSequence
+
+Create simultaneous key combination definitions:
+
+```tsx
+import { chordSequence } from 'use-normalized-keys';
+
+const shortcuts = [
+  chordSequence('save', ['Control', 's']),
+  chordSequence('copy', ['Control', 'c'], { name: 'Copy' }),
+  chordSequence('screenshot', ['Control', 'Shift', 's'])
+];
+```
+
+### fightingCombo
+
+Create fighting game style combos with numpad notation:
+
+```tsx
+import { fightingCombo } from 'use-normalized-keys';
+
+const fightingMoves = [
+  fightingCombo('hadouken', '236P'),           // Quarter circle forward + punch
+  fightingCombo('shoryuken', '623P'),          // Dragon punch motion
+  fightingCombo('sonic-boom', '[4]6P', {      // Charge back, forward + punch
+    chargeTime: 800
+  })
+];
+```
+
+### rhythmSequence  
+
+Create rhythm-based sequences:
+
+```tsx
+import { rhythmSequence } from 'use-normalized-keys';
+
+const rhythmPatterns = [
+  rhythmSequence('dance-move', ['↑', '↓', '←', '→'], 120), // 120 BPM
+  rhythmSequence('beat-match', ['Space', 'Space', 'Enter'], 140, {
+    tolerance: 50 // 50ms timing tolerance
+  })
+];
+```
+
+### holdSequences
+
+Create multiple hold sequences with a common pattern:
+
+```tsx
+import { holdSequences } from 'use-normalized-keys';
+
+const chargeMoves = holdSequences([
+  { id: 'light-punch', key: 'j', duration: 200, name: 'Light Punch' },
+  { id: 'medium-punch', key: 'j', duration: 500, name: 'Medium Punch' },
+  { id: 'heavy-punch', key: 'j', duration: 1000, name: 'Heavy Punch' }
+]);
+```
+
 ## 🛠️ API Reference
 
 ### Hook Options
@@ -230,6 +455,52 @@ interface UseNormalizedKeysOptions {
   tapHoldThreshold?: number;      // Tap vs hold threshold in ms (default: 200)
   sequences?: SequenceOptions;    // Sequence detection configuration
   preventDefault?: boolean | string[]; // Prevent default for all or specific keys
+}
+```
+
+### Helper Hook APIs
+
+```typescript
+// useHoldProgress return type
+interface HoldProgressResult {
+  progress: number;        // Smooth progress value (0-100)
+  isHolding: boolean;      // Whether currently holding
+  isComplete: boolean;     // Whether hold is complete
+  elapsedTime: number;     // Time elapsed in ms
+  remainingTime: number;   // Time remaining in ms
+  startTime: number | null; // When hold started
+  minHoldTime: number;     // Required hold duration
+}
+
+// useHoldAnimation return type
+interface HoldAnimationResult {
+  progress: number;        // Animated progress (0-100)
+  scale: number;          // Scale multiplier (1.0-1.3)
+  opacity: number;        // Opacity value (0.3-1.0)
+  glow: number;          // Glow intensity (0-1)
+  shake: number;         // Shake offset in pixels
+  isAnimating: boolean;   // Whether animation is active
+  isCharging: boolean;    // Whether currently charging
+  isReady: boolean;       // Whether at 90%+ progress
+}
+
+// useSequence return type
+interface SequenceResult {
+  isHolding: boolean;      // Currently holding
+  isComplete: boolean;     // Sequence complete
+  progress: number;        // Progress percentage
+  justStarted: boolean;    // Just started (100ms window)
+  justCompleted: boolean;  // Just completed (100ms window)
+  justCancelled: boolean;  // Just cancelled (100ms window)
+  startTime: number | null; // When started
+  elapsedTime: number;     // Time elapsed
+  remainingTime: number;   // Time remaining
+  minHoldTime: number;     // Required duration
+  matchCount: number;      // Total matches
+  eventHistory: Array<{    // Event history
+    timestamp: number;
+    type: 'started' | 'completed' | 'cancelled';
+  }>;
 }
 ```
 

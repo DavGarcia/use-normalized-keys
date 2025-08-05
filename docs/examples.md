@@ -64,7 +64,7 @@ function SequenceExample() {
       <div>
         <h3>Try these sequences:</h3>
         <ul>
-          <li>Konami Code: ↑↑↓↓←→←→BA</li>
+          <li>Konami Code: ↑↑↓↓←→←→BA (Use ArrowUp, ArrowDown, ArrowLeft, ArrowRight keys)</li>
           <li>Save: Ctrl+S</li>
           <li>Hello: Type "hello"</li>
         </ul>
@@ -602,6 +602,340 @@ export default function AdvancedGame() {
             - {keys.lastEvent.duration}ms
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Helper Hooks Examples
+
+### useHoldProgress: Charging System
+
+```tsx
+import { useNormalizedKeys, useHoldProgress } from 'use-normalized-keys';
+import { holdSequence } from 'use-normalized-keys';
+
+function ChargingSystem() {
+  const sequences = [
+    holdSequence('charge-jump', 'Space', 1000, { name: 'Charge Jump' }),
+    holdSequence('power-blast', 'f', 1500, { name: 'Power Blast' }),
+    holdSequence('shield', 's', 800, { name: 'Shield' })
+  ];
+
+  const keys = useNormalizedKeys({
+    sequences: { sequences }
+  });
+  
+  const jumpProgress = useHoldProgress('charge-jump');
+  const blastProgress = useHoldProgress('power-blast');
+  const shieldProgress = useHoldProgress('shield');
+  
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2>Charging System Demo</h2>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Charge Jump (Space)</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '200px',
+            height: '20px',
+            backgroundColor: '#ddd',
+            borderRadius: '10px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${jumpProgress.progress}%`,
+              height: '100%',
+              backgroundColor: jumpProgress.isComplete ? '#4CAF50' : '#2196F3',
+              transition: 'width 0.1s'
+            }} />
+          </div>
+          <span>
+            {jumpProgress.isHolding 
+              ? `${Math.ceil(jumpProgress.remainingTime / 1000)}s` 
+              : jumpProgress.isComplete ? 'READY!' : 'Hold Space'
+            }
+          </span>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Power Blast (F)</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '200px',
+            height: '20px',
+            backgroundColor: '#ddd',
+            borderRadius: '10px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${blastProgress.progress}%`,
+              height: '100%',
+              backgroundColor: blastProgress.isComplete ? '#FF5722' : '#FF9800',
+              transition: 'width 0.1s'
+            }} />
+          </div>
+          <span>
+            {blastProgress.isHolding 
+              ? `${Math.ceil(blastProgress.remainingTime / 1000)}s` 
+              : blastProgress.isComplete ? 'BLAST!' : 'Hold F'
+            }
+          </span>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+        <h3>Shield (S)</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '200px',
+            height: '20px',
+            backgroundColor: '#ddd',
+            borderRadius: '10px',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              width: `${shieldProgress.progress}%`,
+              height: '100%',
+              backgroundColor: shieldProgress.isComplete ? '#9C27B0' : '#E91E63',
+              transition: 'width 0.1s'
+            }} />
+          </div>
+          <span>
+            {shieldProgress.isHolding 
+              ? `${Math.ceil(shieldProgress.remainingTime / 1000)}s` 
+              : shieldProgress.isComplete ? 'SHIELD!' : 'Hold S'
+            }
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### useHoldAnimation: Visual Effects
+
+```tsx
+import { useNormalizedKeys, useHoldAnimation } from 'use-normalized-keys';
+import { holdSequence } from 'use-normalized-keys';
+
+function AnimatedSpellCasting() {
+  const spells = [
+    holdSequence('fireball', '1', 600, { name: 'Fireball' }),
+    holdSequence('lightning', '2', 800, { name: 'Lightning' }),
+    holdSequence('ice-blast', '3', 1000, { name: 'Ice Blast' })
+  ];
+
+  const keys = useNormalizedKeys({
+    sequences: { sequences: spells }
+  });
+  
+  const fireball = useHoldAnimation('fireball');
+  const lightning = useHoldAnimation('lightning');
+  const ice = useHoldAnimation('ice-blast');
+  
+  const SpellIcon = ({ animation, name, color, keyName }) => (
+    <div style={{ textAlign: 'center', margin: '20px' }}>
+      <h4>{name} ({keyName})</h4>
+      <div
+        style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          backgroundColor: color,
+          margin: '0 auto 10px',
+          position: 'relative',
+          transform: `scale(${animation.scale}) translateX(${animation.shake}px)`,
+          opacity: animation.opacity,
+          boxShadow: animation.glow > 0 
+            ? `0 0 ${animation.glow * 30}px ${color}` 
+            : 'none',
+          transition: animation.isCharging ? 'none' : 'all 0.3s ease'
+        }}
+      >
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: `${animation.progress}%`,
+          backgroundColor: 'rgba(255, 255, 255, 0.3)',
+          borderRadius: '50%',
+          transition: 'height 0.1s'
+        }} />
+        {animation.isReady && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '12px'
+          }}>
+            CAST!
+          </div>
+        )}
+      </div>
+      <div style={{ fontSize: '12px', minHeight: '40px' }}>
+        {animation.isCharging && !animation.isReady && (
+          <div>Charging... {Math.round(animation.progress)}%</div>
+        )}
+        {animation.isReady && <div style={{ color: 'green' }}>Ready to Cast!</div>}
+        {!animation.isCharging && <div>Hold {keyName} to charge</div>}
+      </div>
+    </div>
+  );
+  
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2>Animated Spell Casting</h2>
+      <p>Hold number keys to charge spells. Watch the visual effects!</p>
+      
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <SpellIcon 
+          animation={fireball} 
+          name="Fireball" 
+          color="#ff4444" 
+          keyName="1"
+        />
+        <SpellIcon 
+          animation={lightning} 
+          name="Lightning" 
+          color="#ffff44" 
+          keyName="2"
+        />
+        <SpellIcon 
+          animation={ice} 
+          name="Ice Blast" 
+          color="#4444ff" 
+          keyName="3"
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+### useSequence: Game Event Tracking
+
+```tsx
+import { useNormalizedKeys, useSequence } from 'use-normalized-keys';
+import { comboSequence, holdSequence } from 'use-normalized-keys';
+import { useState, useEffect } from 'react';
+
+function GameEventDemo() {
+  const [events, setEvents] = useState<string[]>([]);
+
+  const sequences = [
+    comboSequence('quick-combo', ['a', 's', 'd'], { name: 'Quick Combo', timeout: 600 }),
+    holdSequence('power-move', 'Space', 800, { name: 'Power Move' }),
+    comboSequence('special-sequence', ['q', 'w', 'e', 'r'], { name: 'Special Sequence', timeout: 1000 })
+  ];
+
+  const keys = useNormalizedKeys({
+    sequences: { sequences }
+  });
+  
+  const quickCombo = useSequence('quick-combo');
+  const powerMove = useSequence('power-move');
+  const special = useSequence('special-sequence');
+  
+  // Track all sequence events
+  useEffect(() => {
+    if (quickCombo.justStarted) {
+      setEvents(prev => [...prev.slice(-9), 'Quick Combo started']);
+    }
+    if (quickCombo.justCompleted) {
+      setEvents(prev => [...prev.slice(-9), 'Quick Combo completed!']);
+    }
+    if (quickCombo.justCancelled) {
+      setEvents(prev => [...prev.slice(-9), 'Quick Combo cancelled']);
+    }
+  }, [quickCombo.justStarted, quickCombo.justCompleted, quickCombo.justCancelled]);
+  
+  useEffect(() => {
+    if (powerMove.justStarted) {
+      setEvents(prev => [...prev.slice(-9), 'Power Move charging...']);
+    }
+    if (powerMove.justCompleted) {
+      setEvents(prev => [...prev.slice(-9), 'Power Move unleashed!']);
+    }
+    if (powerMove.justCancelled) {
+      setEvents(prev => [...prev.slice(-9), 'Power Move cancelled']);
+    }
+  }, [powerMove.justStarted, powerMove.justCompleted, powerMove.justCancelled]);
+  
+  useEffect(() => {
+    if (special.justStarted) {
+      setEvents(prev => [...prev.slice(-9), 'Special Sequence started']);
+    }
+    if (special.justCompleted) {
+      setEvents(prev => [...prev.slice(-9), 'Special Sequence completed!']);
+    }
+    if (special.justCancelled) {
+      setEvents(prev => [...prev.slice(-9), 'Special Sequence cancelled']);
+    }
+  }, [special.justStarted, special.justCompleted, special.justCancelled]);
+  
+  return (
+    <div style={{ padding: '20px' }}>
+      <h2>Game Event Tracking Demo</h2>
+      <p>Try the sequences and watch real-time event tracking:</p>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginBottom: '20px' }}>
+        <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
+          <h4>Quick Combo (A-S-D)</h4>
+          <div>Completed: {quickCombo.matchCount} times</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            Status: {quickCombo.isHolding ? 'In Progress' : 'Ready'}
+          </div>
+        </div>
+        
+        <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
+          <h4>Power Move (Hold Space)</h4>
+          <div>Completed: {powerMove.matchCount} times</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            {powerMove.isHolding 
+              ? `Charging: ${powerMove.progress.toFixed(0)}%` 
+              : 'Ready'
+            }
+          </div>
+        </div>
+        
+        <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
+          <h4>Special (Q-W-E-R)</h4>
+          <div>Completed: {special.matchCount} times</div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            Status: {special.isHolding ? 'In Progress' : 'Ready'}
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <h3>Event Log</h3>
+        <div style={{ 
+          height: '150px', 
+          overflowY: 'auto', 
+          border: '1px solid #ddd', 
+          padding: '10px',
+          backgroundColor: '#f9f9f9',
+          fontSize: '12px'
+        }}>
+          {events.length === 0 ? (
+            <div style={{ color: '#666' }}>Start performing sequences to see events...</div>
+          ) : (
+            events.map((event, i) => (
+              <div key={i} style={{ marginBottom: '2px' }}>
+                [{new Date().toLocaleTimeString()}] {event}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

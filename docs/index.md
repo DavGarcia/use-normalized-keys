@@ -73,6 +73,28 @@ function GameComponent() {
 }
 ```
 
+## Simplified API
+
+For common use cases, we provide helper hooks that make implementation even easier:
+
+```tsx
+import { useNormalizedKeys, useHoldProgress, holdSequence } from 'use-normalized-keys';
+
+function PowerAttack() {
+  // Main hook must be called to establish keyboard handling
+  const keys = useNormalizedKeys({
+    sequences: {
+      sequences: [holdSequence('power-attack', 'q', 1000)]
+    }
+  });
+  
+  // Helper hook tracks the specific sequence progress
+  const { progress, isComplete } = useHoldProgress('power-attack');
+  
+  return <div>Power Attack: {isComplete ? 'READY!' : `${Math.round(progress)}%`}</div>;
+}
+```
+
 ## Getting Started
 
 Ready to get started? Check out our [installation guide](/installation) and [quick start tutorial](/quick-start).

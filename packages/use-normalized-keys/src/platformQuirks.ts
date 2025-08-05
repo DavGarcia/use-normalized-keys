@@ -12,14 +12,32 @@
 
 // Platform detection utilities
 export const Platform = {
-  isWindows: () => navigator.platform.startsWith('Win'),
-  isMacOS: () => navigator.platform.startsWith('Mac'),
-  isLinuxPlatform: () => navigator.platform.startsWith('Linux'),
+  isWindows: () => {
+    if (typeof navigator === 'undefined' || !navigator.platform) return false;
+    return navigator.platform.startsWith('Win');
+  },
+  isMacOS: () => {
+    if (typeof navigator === 'undefined' || !navigator.platform) return false;
+    return navigator.platform.startsWith('Mac');
+  },
+  isLinuxPlatform: () => {
+    if (typeof navigator === 'undefined' || !navigator.platform) return false;
+    return navigator.platform.startsWith('Linux');
+  },
   
   // User agent-based detection as fallback
-  isWindowsUA: () => /Windows/.test(navigator.userAgent),
-  isMacOSUA: () => /Mac OS X|macOS/.test(navigator.userAgent),
-  isLinuxUA: () => /Linux/.test(navigator.userAgent),
+  isWindowsUA: () => {
+    if (typeof navigator === 'undefined' || !navigator.userAgent) return false;
+    return /Windows/.test(navigator.userAgent);
+  },
+  isMacOSUA: () => {
+    if (typeof navigator === 'undefined' || !navigator.userAgent) return false;
+    return /Mac OS X|macOS/.test(navigator.userAgent);
+  },
+  isLinuxUA: () => {
+    if (typeof navigator === 'undefined' || !navigator.userAgent) return false;
+    return /Linux/.test(navigator.userAgent);
+  },
   
   // Combined detection
   get isWin() { return this.isWindows() || this.isWindowsUA(); },
@@ -69,9 +87,6 @@ interface PlatformQuirkState {
   // macOS Meta key timeout handling  
   macOSMetaTimeoutId: number | null;
   macOSMetaLastActivity: number;
-  
-  // General stuck key detection
-  suspiciousKeyStates: Map<string, number>; // key -> timestamp when became suspicious
 }
 
 /**
@@ -88,7 +103,6 @@ export function createPlatformQuirkState(): PlatformQuirkState {
     },
     macOSMetaTimeoutId: null,
     macOSMetaLastActivity: 0,
-    suspiciousKeyStates: new Map(),
   };
 }
 
@@ -125,12 +139,14 @@ export function setEventEmitter(
  * @param e - The keyboard event to check
  * @param keyStates - Map of current key states (your internal tracker)
  * @param quirkStateContainer - Platform quirk state tracker
+ * @param debug - Optional debug flag to enable logging (defaults to false)
  * @returns 'emit' | 'buffer' | 'suppress' to indicate how to handle the event
  */
 export function shouldSuppressWindowsShiftPhantom(
   e: KeyboardEvent,
   keyStates: Map<string, { isDown: boolean }>,
-  quirkStateContainer: PlatformQuirkState
+  quirkStateContainer: PlatformQuirkState,
+  debug: boolean = false
 ): 'emit' | 'buffer' | 'suppress' {
   if (!Platform.isWin) return 'emit';
 
@@ -139,7 +155,7 @@ export function shouldSuppressWindowsShiftPhantom(
   const BUFFER_WINDOW_MS = 10;
   
   // Debug logging
-  if (e.key === 'Shift' || NUMPAD_CODES.has(e.code)) {
+  if (debug && (e.key === 'Shift' || NUMPAD_CODES.has(e.code))) {
     console.log(`[platformQuirks] ${e.type} ${e.key} ${e.code} at ${now.toFixed(1)}`);
   }
   
@@ -153,21 +169,27 @@ export function shouldSuppressWindowsShiftPhantom(
       if (quirks.shiftIsDown && quirks.numpadUpTime > 0) {
         const timeSinceNumpadUp = now - quirks.numpadUpTime;
         if (timeSinceNumpadUp <= BUFFER_WINDOW_MS) {
-          console.log(`[platformQuirks] Suppressing phantom Shift keydown (${timeSinceNumpadUp.toFixed(1)}ms after numpad keyup)`);
+          if (debug) {
+            console.log(`[platformQuirks] Suppressing phantom Shift keydown (${timeSinceNumpadUp.toFixed(1)}ms after numpad keyup)`);
+          }
           return 'suppress';
         }
       }
       
       // Track real Shift keydown
       quirks.shiftIsDown = true;
-      console.log('[platformQuirks] Real Shift keydown');
+      if (debug) {
+        console.log('[platformQuirks] Real Shift keydown');
+      }
       return 'emit';
       
     } else if (e.type === 'keyup') {
       // Check if this event was already buffered and is being re-emitted
       // We use a custom property to track this
       if ((e as any).__useNormalizedKeys_processed) {
-        console.log('[platformQuirks] Emitting already-processed Shift keyup');
+        if (debug) {
+          console.log('[platformQuirks] Emitting already-processed Shift keyup');
+        }
         quirks.shiftIsDown = false;
         return 'emit';
       }
@@ -175,15 +197,21 @@ export function shouldSuppressWindowsShiftPhantom(
       // Clear any existing buffered event (sliding window extension)
       if (quirks.bufferedShiftUp && quirks.bufferedShiftUp.timeoutId) {
         clearTimeout(quirks.bufferedShiftUp.timeoutId);
-        console.log('[platformQuirks] Extending Shift keyup buffer window');
+        if (debug) {
+          console.log('[platformQuirks] Extending Shift keyup buffer window');
+        }
       }
       
       // Buffer this Shift keyup
-      console.log('[platformQuirks] Buffering Shift keyup for 10ms to check for phantom');
+      if (debug) {
+        console.log('[platformQuirks] Buffering Shift keyup for 10ms to check for phantom');
+      }
       
       const timeoutId = setTimeout(() => {
         // No numpad arrived, this is a real Shift keyup
-        console.log('[platformQuirks] No numpad detected, emitting real Shift keyup');
+        if (debug) {
+          console.log('[platformQuirks] No numpad detected, emitting real Shift keyup');
+        }
         quirks.shiftIsDown = false;
         quirks.bufferedShiftUp = null;
         
@@ -212,7 +240,9 @@ export function shouldSuppressWindowsShiftPhantom(
       if (quirks.bufferedShiftUp) {
         const timeSinceBuffer = now - quirks.bufferedShiftUp.timestamp;
         if (timeSinceBuffer <= BUFFER_WINDOW_MS) {
-          console.log(`[platformQuirks] Numpad keydown confirms phantom Shift keyup (${timeSinceBuffer.toFixed(1)}ms after)`);
+          if (debug) {
+            console.log(`[platformQuirks] Numpad keydown confirms phantom Shift keyup (${timeSinceBuffer.toFixed(1)}ms after)`);
+          }
           
           // Cancel the timeout and clear the buffer
           if (quirks.bufferedShiftUp.timeoutId) {
@@ -226,7 +256,9 @@ export function shouldSuppressWindowsShiftPhantom(
       if (quirks.bufferedShiftUp) {
         const timeSinceBuffer = now - quirks.bufferedShiftUp.timestamp;
         if (timeSinceBuffer <= BUFFER_WINDOW_MS) {
-          console.log(`[platformQuirks] Numpad keyup confirms phantom Shift keyup (${timeSinceBuffer.toFixed(1)}ms after)`);
+          if (debug) {
+            console.log(`[platformQuirks] Numpad keyup confirms phantom Shift keyup (${timeSinceBuffer.toFixed(1)}ms after)`);
+          }
           
           // Cancel the timeout and clear the buffer
           if (quirks.bufferedShiftUp.timeoutId) {
@@ -238,7 +270,9 @@ export function shouldSuppressWindowsShiftPhantom(
       
       // Record numpad keyup time for phantom Shift keydown detection
       quirks.numpadUpTime = now;
-      console.log(`[platformQuirks] Recording numpad keyup at ${now.toFixed(1)}`);
+      if (debug) {
+        console.log(`[platformQuirks] Recording numpad keyup at ${now.toFixed(1)}`);
+      }
     }
   }
 
@@ -280,6 +314,7 @@ export function handleMacOSMetaTimeout(
         const timeSinceActivity = Date.now() - quirkState.macOSMetaLastActivity;
         
         if (timeSinceActivity >= META_TIMEOUT_MS) {
+          // Note: This timeout logging is kept for macOS debugging since it's rare and important
           console.log('[platformQuirks] macOS Meta key timeout - forcing reset');
           onMetaTimeout();
           quirkState.macOSMetaTimeoutId = null;
@@ -382,11 +417,6 @@ export function cleanupPlatformQuirks(quirkState: PlatformQuirkState): void {
     clearTimeout(quirkState.macOSMetaTimeoutId);
     quirkState.macOSMetaTimeoutId = null;
   }
-  
-  // Clear suspicious key states
-  quirkState.suspiciousKeyStates.clear();
-  
-  console.log('[platformQuirks] Platform quirk state cleaned up');
 }
 
 /**
@@ -400,8 +430,10 @@ export function getPlatformDebugInfo(quirkState: PlatformQuirkState) {
     platform: {
       detected: Platform.isWin ? 'Windows' : Platform.isMac ? 'macOS' : Platform.isLinux ? 'Linux' : 'Unknown',
       navigator: {
-        platform: navigator.platform,
-        userAgent: navigator.userAgent.substring(0, 100) + '...'
+        platform: typeof navigator !== 'undefined' && navigator.platform ? navigator.platform : 'unavailable',
+        userAgent: typeof navigator !== 'undefined' && navigator.userAgent 
+          ? navigator.userAgent.substring(0, 100) + '...' 
+          : 'unavailable'
       }
     },
     quirks: {
@@ -409,7 +441,6 @@ export function getPlatformDebugInfo(quirkState: PlatformQuirkState) {
       windowsShiftIsDown: quirkState.windowsShiftQuirks.shiftIsDown,
       windowsRecentEvents: quirkState.windowsShiftQuirks.recentEvents.length,
       macOSMetaTimeoutActive: quirkState.macOSMetaTimeoutId !== null,
-      suspiciousKeys: quirkState.suspiciousKeyStates.size
     }
   };
 }
