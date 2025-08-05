@@ -6,6 +6,8 @@
  * (e.g., "Ctrl+Shift+P"), and timing-based sequences.
  */
 
+import type { HoldProgress } from './index';
+
 // Import type from the parent module to avoid circular dependency
 export interface NormalizedKeyEvent {
   key: string;
@@ -119,6 +121,7 @@ export interface SequenceState {
   // Hold detection
   heldKeys: Map<string, { startTime: number; event: NormalizedKeyEvent }>;
   holdTimers: Map<string, NodeJS.Timeout>; // Track active hold timers
+  activeHolds: Map<string, HoldProgress>; // Track active hold progress
   
   // Match history (optional, for debugging)
   recentMatches: MatchedSequence[];
@@ -151,6 +154,7 @@ export function createSequenceState(options: SequenceOptions = {}): SequenceStat
     chordMatched: false,
     heldKeys: new Map(),
     holdTimers: new Map(),
+    activeHolds: new Map(),
     recentMatches: [],
     options: { ...defaultOptions, ...options },
   };
@@ -229,8 +233,45 @@ export function processSequenceEvent(
             const targetNorm = seq.caseSensitive ? targetKey : targetKey.toLowerCase();
             
             if (keyNorm === targetNorm) {
+              // Check modifiers if specified
+              if (typeof keyDef === 'object' && keyDef.modifiers) {
+                const modsMatch = Object.entries(keyDef.modifiers).every(([mod, value]) => 
+                  event.activeModifiers[mod as keyof typeof event.activeModifiers] === value
+                );
+                if (!modsMatch) return;
+              }
+              
+              // Start tracking hold progress
+              const holdProgress: HoldProgress = {
+                sequenceId: seq.id,
+                sequenceName: seq.name,
+                key: event.key,
+                startTime: now,
+                minHoldTime,
+                progress: 0,
+                progressPercent: 0,
+                elapsedTime: 0,
+                remainingTime: minHoldTime,
+                isComplete: false
+              };
+              state.activeHolds.set(seq.id, holdProgress);
+              
+              if (options.debug) {
+                console.log('[sequenceDetection] Started tracking hold for:', seq.id, 'key:', event.key, 'activeHolds size:', state.activeHolds.size);
+              }
+              
               // Start hold timer
               const timerId = setTimeout(() => {
+                // Mark hold as complete
+                const completeHold = state.activeHolds.get(seq.id);
+                if (completeHold) {
+                  completeHold.isComplete = true;
+                  completeHold.progress = 1;
+                  completeHold.progressPercent = 100;
+                  completeHold.elapsedTime = minHoldTime;
+                  completeHold.remainingTime = 0;
+                }
+                
                 // Emit hold match event
                 const match: MatchedSequence = {
                   sequenceId: seq.id,
@@ -360,7 +401,19 @@ export function processSequenceEvent(
           const keyNorm = seq.caseSensitive ? event.key : event.key.toLowerCase();
           const targetNorm = seq.caseSensitive ? targetKey : targetKey.toLowerCase();
           
+          if (options.debug) {
+            console.log('[sequenceDetection] Keyup comparison for seq:', seq.id, 'keyNorm:', keyNorm, 'targetNorm:', targetNorm, 'match:', keyNorm === targetNorm);
+          }
+          
           if (keyNorm === targetNorm) {
+            // Check modifiers if specified
+            if (typeof keyDef === 'object' && keyDef.modifiers) {
+              const modsMatch = Object.entries(keyDef.modifiers).every(([mod, value]) => 
+                event.activeModifiers[mod as keyof typeof event.activeModifiers] === value
+              );
+              if (!modsMatch) return;
+            }
+            
             const timerId = state.holdTimers.get(seq.id);
             if (timerId) {
               clearTimeout(timerId);
@@ -369,6 +422,13 @@ export function processSequenceEvent(
               if (options.debug) {
                 console.log('[sequenceDetection] Cancelled hold timer for:', seq.id);
               }
+            }
+            
+            // Clear hold progress
+            state.activeHolds.delete(seq.id);
+            
+            if (options.debug) {
+              console.log('[sequenceDetection] Cleared activeHolds for:', seq.id, 'activeHolds size:', state.activeHolds.size);
             }
           }
         }
@@ -692,6 +752,9 @@ export function resetSequenceState(state: SequenceState): void {
   // Cancel all hold timers
   state.holdTimers.forEach(timerId => clearTimeout(timerId));
   state.holdTimers.clear();
+  
+  // Clear active hold progress
+  state.activeHolds.clear();
   
   state.recentMatches = [];
 }

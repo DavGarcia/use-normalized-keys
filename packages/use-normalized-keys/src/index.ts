@@ -37,6 +37,23 @@ interface KeyState {
   pressTime?: number; // For tap-vs-hold detection
 }
 
+// Hold progress tracking
+export interface HoldProgress {
+  sequenceId: string;
+  sequenceName?: string;
+  key: string;
+  startTime: number;
+  minHoldTime: number;
+  progress: number;
+  progressPercent: number;
+  elapsedTime: number;
+  remainingTime: number;
+  isComplete: boolean;
+}
+
+// Type alias for current holds map
+export type CurrentHolds = Map<string, HoldProgress>;
+
 // Hook return type definitions
 export interface NormalizedKeyState {
   lastEvent: NormalizedKeyEvent | null;
@@ -69,6 +86,7 @@ export interface NormalizedKeyState {
       recentMatches: MatchedSequence[];
     };
   };
+  currentHolds: CurrentHolds;
 }
 
 export interface UseNormalizedKeysOptions {
@@ -221,7 +239,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
   const debugCountersRef = useRef({ events: 0, suppressed: 0, quirksHandled: 0 });
   const platformQuirksRef = useRef(createPlatformQuirkState());
   const sequenceStateRef = useRef<SequenceState | null>(
-    sequences ? createSequenceState(sequences) : null
+    sequences ? createSequenceState({ ...sequences, debug }) : null
   );
   const sequencesClearedRef = useRef(false);
   
@@ -238,6 +256,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     scrollLock: false,
   });
   const [sequenceMatches, setSequenceMatches] = useState<MatchedSequence[]>([]);
+  const [currentHolds, setCurrentHolds] = useState<CurrentHolds>(new Map());
 
   const isKeyPressed = useCallback((key: string): boolean => {
     return pressedKeys.has(key);
@@ -264,6 +283,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     if (sequenceStateRef.current) {
       resetSequenceState(sequenceStateRef.current);
       setSequenceMatches([]);
+      setCurrentHolds(new Map());
     }
     
     if (debug) {
@@ -466,6 +486,10 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
         console.log('[useNormalizedKeys] After sequence processing, current sequence length:', sequenceStateRef.current.currentSequence.length);
       }
       
+      // Always sync currentHolds from the sequence state after processing
+      // This ensures we capture both additions and removals
+      setCurrentHolds(new Map(state.activeHolds));
+      
       if (matches.length > 0) {
         setSequenceMatches(prev => [...prev, ...matches]);
         
@@ -583,6 +607,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
       sequences: []
     });
     setSequenceMatches([]);
+    setCurrentHolds(new Map());
     
     if (debug) {
       console.log('[useNormalizedKeys] Cleared all sequences, new count:', sequenceStateRef.current.options.sequences?.length || 0);
@@ -594,6 +619,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     
     resetSequenceState(sequenceStateRef.current);
     setSequenceMatches([]);
+    setCurrentHolds(new Map());
     
     if (debug) {
       console.log('[useNormalizedKeys] Reset sequence state');
@@ -607,12 +633,61 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     }
   }, [sequences]);
 
+  // Store ref to currentHolds for interval access
+  const currentHoldsRef = useRef<CurrentHolds>(currentHolds);
+  useEffect(() => {
+    currentHoldsRef.current = currentHolds;
+  }, [currentHolds]);
+
+  // Update hold progress values in real-time
+  useEffect(() => {
+    const updateHoldProgress = () => {
+      const holds = currentHoldsRef.current;
+      if (holds.size === 0) return;
+      
+      const now = Date.now();
+      let hasChanges = false;
+      const updatedHolds = new Map<string, HoldProgress>();
+
+      holds.forEach((hold, sequenceId) => {
+        if (!hold.isComplete) {
+          const elapsed = now - hold.startTime;
+          const progress = Math.min(1, elapsed / hold.minHoldTime);
+          const progressPercent = progress * 100;
+          const remainingTime = Math.max(0, hold.minHoldTime - elapsed);
+          
+          const updatedHold: HoldProgress = {
+            ...hold,
+            progress,
+            progressPercent,
+            elapsedTime: elapsed,
+            remainingTime,
+            isComplete: progress >= 1
+          };
+          
+          updatedHolds.set(sequenceId, updatedHold);
+          hasChanges = true;
+        } else {
+          updatedHolds.set(sequenceId, hold);
+        }
+      });
+
+      if (hasChanges) {
+        setCurrentHolds(updatedHolds);
+      }
+    };
+
+    const intervalId = setInterval(updateHoldProgress, 16); // ~60fps
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Build return object
   const result: NormalizedKeyState = {
     lastEvent,
     pressedKeys,
     isKeyPressed,
-    activeModifiers
+    activeModifiers,
+    currentHolds
   };
 
   // Add sequence functionality if enabled

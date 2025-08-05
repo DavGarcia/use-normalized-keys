@@ -135,17 +135,15 @@ const getSequences = (customHoldTime: number): SequenceDefinition[] => [
 // Memoized progress bar component to prevent unnecessary re-renders
 const HoldProgressBar = memo(({ 
   sequenceId, 
-  activeHolds, 
+  currentHolds, 
   animationTick 
 }: { 
   sequenceId: string; 
-  activeHolds: Map<string, { startTime: number; minHoldTime: number }>;
+  currentHolds: Map<string, import('../src/index').HoldProgress>;
   animationTick: number;
 }) => {
-  const holdInfo = activeHolds.get(sequenceId);
-  const progress = holdInfo 
-    ? Math.min(100, Math.max(0, ((Date.now() - holdInfo.startTime) / holdInfo.minHoldTime) * 100))
-    : 0;
+  const holdInfo = currentHolds.get(sequenceId);
+  const progress = holdInfo ? holdInfo.progressPercent : 0;
   
   return (
     <div 
@@ -175,14 +173,13 @@ export default function InteractiveDemo() {
   const [recordedKeys, setRecordedKeys] = useState<string[]>([]);
   const [customSequences, setCustomSequences] = useState<SequenceDefinition[]>([]);
   const [snackbar, setSnackbar] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
-  const [activeHolds, setActiveHolds] = useState<Map<string, { startTime: number; minHoldTime: number }>>(new Map());
+  // activeHolds is now provided by the hook as currentHolds
   const [customHoldTime, setCustomHoldTime] = useState(500);
   const [showCustomHold, setShowCustomHold] = useState(false);
   const [animationTick, setAnimationTick] = useState(0);
   const eventIdRef = useRef(0);
   const sequenceIdRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
-  const activeHoldsRef = useRef<Map<string, { startTime: number; minHoldTime: number }>>(new Map());
   
   // Prevent default behavior for certain keys
   useEffect(() => {
@@ -229,10 +226,51 @@ export default function InteractiveDemo() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Performance metrics
+  const [metrics, setMetrics] = useState({
+    eventCount: 0,
+    avgProcessTime: 0,
+    lastProcessTime: 0
+  });
+  const processTimesRef = useRef<number[]>([]);
+
+  const handleSequenceMatch = useCallback((match: MatchedSequence) => {
+    setMatchedSequences(prev => [{
+      ...match,
+      id: ++sequenceIdRef.current
+    }, ...prev].slice(0, 10));
+    
+    // Note: activeHolds are now automatically managed by the hook's currentHolds
+  }, []);
+
+  const [pressedKeyCodes, setPressedKeyCodes] = useState<Set<string>>(new Set());
+  
+  const { 
+    lastEvent, 
+    pressedKeys, 
+    isKeyPressed, 
+    activeModifiers,
+    sequences,
+    currentHolds
+  } = useNormalizedKeys({ 
+    excludeInputFields: excludeInputs,
+    debug: debugMode,
+    tapHoldThreshold: 200,
+    preventDefault: true, // Prevent default browser shortcuts
+    sequences: showSequences ? {
+      sequences: [...getSequences(customHoldTime), ...customSequences],
+      onSequenceMatch: handleSequenceMatch,
+      debug: debugMode
+    } : undefined
+  });
+
+  // Create ref for currentHolds after hook initialization
+  const activeHoldsRef = useRef(currentHolds);
+
   // Keep activeHoldsRef in sync
   useEffect(() => {
-    activeHoldsRef.current = activeHolds;
-  }, [activeHolds]);
+    activeHoldsRef.current = currentHolds;
+  }, [currentHolds]);
 
   // Smooth animation for hold progress
   useEffect(() => {
@@ -253,9 +291,9 @@ export default function InteractiveDemo() {
       }
     };
     
-    if (activeHolds.size > 0 && !animationFrameRef.current) {
+    if (currentHolds.size > 0 && !animationFrameRef.current) {
       animationFrameRef.current = requestAnimationFrame(animate);
-    } else if (activeHolds.size === 0 && animationFrameRef.current) {
+    } else if (currentHolds.size === 0 && animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
@@ -266,51 +304,7 @@ export default function InteractiveDemo() {
         animationFrameRef.current = null;
       }
     };
-  }, [activeHolds.size]);
-
-  // Performance metrics
-  const [metrics, setMetrics] = useState({
-    eventCount: 0,
-    avgProcessTime: 0,
-    lastProcessTime: 0
-  });
-  const processTimesRef = useRef<number[]>([]);
-
-  const handleSequenceMatch = useCallback((match: MatchedSequence) => {
-    setMatchedSequences(prev => [{
-      ...match,
-      id: ++sequenceIdRef.current
-    }, ...prev].slice(0, 10));
-    
-    // If this is a hold match, remove it from activeHolds
-    if (match.type === 'hold') {
-      setActiveHolds(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(match.sequenceId);
-        return newMap;
-      });
-    }
-  }, []);
-
-  const [pressedKeyCodes, setPressedKeyCodes] = useState<Set<string>>(new Set());
-  
-  const { 
-    lastEvent, 
-    pressedKeys, 
-    isKeyPressed, 
-    activeModifiers,
-    sequences
-  } = useNormalizedKeys({ 
-    excludeInputFields: excludeInputs,
-    debug: debugMode,
-    tapHoldThreshold: 200,
-    preventDefault: true, // Prevent default browser shortcuts
-    sequences: showSequences ? {
-      sequences: [...getSequences(customHoldTime), ...customSequences],
-      onSequenceMatch: handleSequenceMatch,
-      debug: debugMode
-    } : undefined
-  });
+  }, [currentHolds.size]);
 
   // Track event history and key codes
   useEffect(() => {
@@ -338,63 +332,7 @@ export default function InteractiveDemo() {
         setRecordedKeys(prev => [...prev, lastEvent.key]);
       }
 
-      // Track hold progress
-      if (lastEvent.type === 'keydown') {
-        // Check if any hold sequences match this key
-        [...getSequences(customHoldTime), ...customSequences].forEach(seq => {
-          if (seq.type === 'hold') {
-            const keyDef = seq.keys[0];
-            const targetKey = typeof keyDef === 'string' ? keyDef : keyDef.key;
-            const minHoldTime = typeof keyDef === 'object' ? keyDef.minHoldTime : 1000;
-            
-            if (targetKey === lastEvent.key) {
-              // Check modifiers if specified
-              if (typeof keyDef === 'object' && keyDef.modifiers) {
-                const modsMatch = Object.entries(keyDef.modifiers).every(([mod, value]) => 
-                  lastEvent.activeModifiers[mod as keyof typeof lastEvent.activeModifiers] === value
-                );
-                if (!modsMatch) return;
-              }
-              
-              if (debugMode) {
-                console.log(`[Demo] Starting hold tracking for ${seq.id}, key: ${targetKey}, minHoldTime: ${minHoldTime}`);
-              }
-              
-              setActiveHolds(prev => {
-                const newMap = new Map(prev);
-                newMap.set(seq.id, { startTime: Date.now(), minHoldTime: minHoldTime || 1000 });
-                return newMap;
-              });
-              
-              // Don't set a timer to auto-remove - let the sequence match or keyup handle it
-            }
-          }
-        });
-      } else if (lastEvent.type === 'keyup') {
-        // Clear holds for this key
-        [...getSequences(customHoldTime), ...customSequences].forEach(seq => {
-          if (seq.type === 'hold') {
-            const keyDef = seq.keys[0];
-            const targetKey = typeof keyDef === 'string' ? keyDef : keyDef.key;
-            
-            if (targetKey === lastEvent.key) {
-              // Check modifiers if specified
-              if (typeof keyDef === 'object' && keyDef.modifiers) {
-                const modsMatch = Object.entries(keyDef.modifiers).every(([mod, value]) => 
-                  lastEvent.activeModifiers[mod as keyof typeof lastEvent.activeModifiers] === value
-                );
-                if (!modsMatch) return;
-              }
-              
-              setActiveHolds(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(seq.id);
-                return newMap;
-              });
-            }
-          }
-        });
-      }
+      // Hold progress is now automatically tracked by the hook via currentHolds
 
       // Update metrics
       const processTime = performance.now() - startTime;
@@ -739,7 +677,7 @@ export default function InteractiveDemo() {
                   <div className="charge-meter">
                     <HoldProgressBar 
                       sequenceId="charge-jump" 
-                      activeHolds={activeHolds} 
+                      currentHolds={currentHolds} 
                       animationTick={animationTick}
                     />
                   </div>
@@ -754,7 +692,7 @@ export default function InteractiveDemo() {
                   <div className="charge-meter">
                     <HoldProgressBar 
                       sequenceId="power-attack" 
-                      activeHolds={activeHolds} 
+                      currentHolds={currentHolds} 
                       animationTick={animationTick}
                     />
                   </div>
@@ -769,7 +707,7 @@ export default function InteractiveDemo() {
                   <div className="charge-meter">
                     <HoldProgressBar 
                       sequenceId="heavy-punch" 
-                      activeHolds={activeHolds} 
+                      currentHolds={currentHolds} 
                       animationTick={animationTick}
                     />
                   </div>
@@ -784,7 +722,7 @@ export default function InteractiveDemo() {
                   <div className="charge-meter">
                     <HoldProgressBar 
                       sequenceId="special-move" 
-                      activeHolds={activeHolds} 
+                      currentHolds={currentHolds} 
                       animationTick={animationTick}
                     />
                   </div>
@@ -813,7 +751,7 @@ export default function InteractiveDemo() {
                   <div className="charge-meter">
                     <HoldProgressBar 
                       sequenceId="custom-hold" 
-                      activeHolds={activeHolds} 
+                      currentHolds={currentHolds} 
                       animationTick={animationTick}
                     />
                   </div>
@@ -853,10 +791,9 @@ export default function InteractiveDemo() {
             <div className="sequence-list">
               <h3>Available Sequences</h3>
               {[...getSequences(customHoldTime), ...customSequences].map(seq => {
-                const holdInfo = activeHolds.get(seq.id);
+                const holdInfo = currentHolds.get(seq.id);
                 const isHolding = !!holdInfo;
-                const progress = isHolding ? 
-                  Math.min(100, Math.max(0, ((Date.now() - holdInfo.startTime) / holdInfo.minHoldTime) * 100)) : 0;
+                const progress = isHolding ? holdInfo.progressPercent : 0;
                 
                 return (
                   <div key={seq.id} className="sequence-item" style={{ position: 'relative' }}>
