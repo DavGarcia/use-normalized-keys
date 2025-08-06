@@ -9,7 +9,7 @@ export default defineConfig({
   build: {
     outDir: '../dist-tools',
     rollupOptions: {
-      input: resolve(__dirname, 'demo/tools/index.html')
+      input: resolve(__dirname, 'demo/tools.html')
     }
   },
   resolve: {
