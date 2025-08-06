@@ -10,7 +10,6 @@ export default defineConfig({
       { text: 'Guide', link: '/' },
       { text: 'API Reference', link: '/api' },
       { text: 'Demo', link: '/demo' },
-      { text: 'Game', link: '/game' },
       { text: 'GitHub', link: 'https://github.com/DavGarcia/use-normalized-keys' }
     ],
     
@@ -35,8 +34,8 @@ export default defineConfig({
       {
         text: 'Interactive',
         items: [
-          { text: 'Live Demo', link: '/demo' },
-          { text: 'Game Demo', link: '/game' }
+          { text: 'Interactive Demo', link: '/demo' },
+          { text: 'Tools Demo', link: '/tools' }
         ]
       }
     ],

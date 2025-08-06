@@ -1039,6 +1039,7 @@ import type {
   SequenceDefinition,
   HoldProgress
 } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
 // Using types in your components
 function MyComponent() {
@@ -1054,8 +1055,8 @@ function MyComponent() {
   };
   
   const customSequence: SequenceDefinition = {
-    id: 'my-combo',
-    keys: ['a', 'b', 'c'],
+    id: 'my-sequence',
+    keys: [Keys.a, Keys.b, Keys.c],
     type: 'sequence'
   };
   

@@ -270,7 +270,7 @@ function App() {
 
 ---
 
-## Direct Hook Usage (Advanced)
+## Direct Hook Usage
 
 For advanced use cases that need direct control over the keyboard state, you can use `useNormalizedKeys` directly.
 
