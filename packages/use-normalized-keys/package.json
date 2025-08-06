@@ -28,7 +28,6 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:watch": "vitest --watch",
-    "test:browser": "node test-server.js",
     "prepublishOnly": "npm run test && npm run build",
     "prepack": "npm run build"
   },
