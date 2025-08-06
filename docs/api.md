@@ -225,56 +225,152 @@ type CurrentHolds = Map<string, HoldProgress>;
 
 ## Examples
 
-### Basic Usage
+### Key Event Processing
+
+Understanding the core event processing model and timing information:
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
-function KeyboardHandler() {
-  const keys = useNormalizedKeys();
+function KeyEventProcessor() {
+  const keys = useNormalizedKeys({ tapHoldThreshold: 200 });
 
-  // React to keyboard events with useEffect
   useEffect(() => {
     if (keys.lastEvent?.type === 'keydown') {
       console.log(`Key pressed: ${keys.lastEvent.key}`);
+      console.log(`Original: ${keys.lastEvent.originalKey}`);
+      console.log(`Code: ${keys.lastEvent.code}`);
+      console.log(`Is modifier: ${keys.lastEvent.isModifier}`);
+      console.log(`Is numpad: ${keys.lastEvent.isNumpad}`);
     }
     
     if (keys.lastEvent?.type === 'keyup') {
       console.log(`Key released: ${keys.lastEvent.key}`);
       console.log(`Duration: ${keys.lastEvent.duration}ms`);
       console.log(`Was ${keys.lastEvent.isTap ? 'tapped' : 'held'}`);
+      console.log(`Default prevented: ${keys.lastEvent.preventedDefault}`);
     }
   }, [keys.lastEvent]);
 
-  // Check if a key is currently pressed
-  const isSpacePressed = keys.isKeyPressed('Space');
-  
-  // Check modifier combinations
-  const isShiftA = keys.activeModifiers.shift && keys.isKeyPressed('a');
-  
-  // Get all pressed keys
-  const pressedKeysList = Array.from(keys.pressedKeys);
-
   return (
     <div>
-      <p>Space pressed: {isSpacePressed ? 'Yes' : 'No'}</p>
-      <p>Shift+A: {isShiftA ? 'Yes' : 'No'}</p>
-      <p>Active keys: {pressedKeysList.join(', ')}</p>
+      <p>Last event type: {keys.lastEvent?.type || 'None'}</p>
+      <p>Event timestamp: {keys.lastEvent?.timestamp}</p>
+      <p>Was repeat: {keys.lastEvent?.isRepeat ? 'Yes' : 'No'}</p>
     </div>
   );
 }
 ```
 
-### Advanced Configuration
+### Modifier Key Detection
+
+Detecting and responding to modifier key combinations for shortcuts and commands:
 
 ```tsx
-const keys = useNormalizedKeys({
-  debug: true,                    // Enable debug logging
-  tapHoldThreshold: 150,         // 150ms threshold for tap vs hold
-  excludeInputFields: false,     // Process events from input fields
-  preventDefault: ['Tab', 'F5'], // Prevent default for specific keys
-});
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+
+function ModifierDetector() {
+  const keys = useNormalizedKeys();
+
+  // Standard productivity shortcuts
+  const isSave = keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.s);
+  const isCopy = keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.c);
+  const isPaste = keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.v);
+  const isUndo = keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.z);
+  
+  // Platform-specific shortcuts (Cmd on macOS, Ctrl on Windows/Linux)
+  const isNewTab = (keys.activeModifiers.meta || keys.activeModifiers.ctrl) && 
+                   keys.isKeyPressed(Keys.t);
+  
+  // Complex combinations
+  const isSelectAll = keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.a);
+  const isForceRefresh = keys.activeModifiers.ctrl && keys.activeModifiers.shift && 
+                        keys.isKeyPressed(Keys.r);
+
+  return (
+    <div>
+      <h3>Active Modifiers</h3>
+      <p>Ctrl: {keys.activeModifiers.ctrl ? '🟢' : '⚪'}</p>
+      <p>Shift: {keys.activeModifiers.shift ? '🟢' : '⚪'}</p>
+      <p>Alt: {keys.activeModifiers.alt ? '🟢' : '⚪'}</p>
+      <p>Meta: {keys.activeModifiers.meta ? '🟢' : '⚪'}</p>
+      <p>Caps Lock: {keys.activeModifiers.caps ? '🟢' : '⚪'}</p>
+      
+      <h3>Keyboard Shortcuts</h3>
+      <p>Save (Ctrl+S): {isSave ? '🟢' : '⚪'}</p>
+      <p>Copy (Ctrl+C): {isCopy ? '🟢' : '⚪'}</p>
+      <p>Paste (Ctrl+V): {isPaste ? '🟢' : '⚪'}</p>
+      <p>New Tab (Ctrl/Cmd+T): {isNewTab ? '🟢' : '⚪'}</p>
+      <p>Force Refresh (Ctrl+Shift+R): {isForceRefresh ? '🟢' : '⚪'}</p>
+    </div>
+  );
+}
+```
+
+### Real-time Key State
+
+Tracking multiple simultaneous key presses for navigation, drawing tools, and interactive applications:
+
+```tsx
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+import { useEffect, useState } from 'react';
+
+function NavigationController() {
+  const keys = useNormalizedKeys();
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [speed, setSpeed] = useState(1);
+
+  useEffect(() => {
+    // Calculate movement vector based on pressed keys
+    const navigation = { x: 0, y: 0 };
+    
+    if (keys.isKeyPressed(Keys.ARROW_LEFT) || keys.isKeyPressed(Keys.a)) navigation.x -= 1;
+    if (keys.isKeyPressed(Keys.ARROW_RIGHT) || keys.isKeyPressed(Keys.d)) navigation.x += 1;
+    if (keys.isKeyPressed(Keys.ARROW_UP) || keys.isKeyPressed(Keys.w)) navigation.y -= 1;
+    if (keys.isKeyPressed(Keys.ARROW_DOWN) || keys.isKeyPressed(Keys.s)) navigation.y += 1;
+    
+    // Speed modifiers
+    let currentSpeed = speed;
+    if (keys.isKeyPressed(Keys.SHIFT_LEFT) || keys.isKeyPressed(Keys.SHIFT_RIGHT)) {
+      currentSpeed *= 2; // Run
+    }
+    if (keys.isKeyPressed(Keys.CONTROL_LEFT) || keys.isKeyPressed(Keys.CONTROL_RIGHT)) {
+      currentSpeed *= 0.5; // Walk slowly
+    }
+    
+    // Apply movement if any keys are pressed
+    if (navigation.x !== 0 || navigation.y !== 0) {
+      setPosition(prev => ({
+        x: prev.x + navigation.x * currentSpeed,
+        y: prev.y + navigation.y * currentSpeed
+      }));
+    }
+    
+    // Update speed based on space key
+    setSpeed(keys.isKeyPressed(Keys.SPACE) ? 3 : 1);
+    
+  }, [keys.pressedKeys, speed]); // Re-run when any key state changes
+
+  const pressedKeysList = Array.from(keys.pressedKeys);
+  const keyCount = pressedKeysList.length;
+
+  return (
+    <div>
+      <h3>Navigation State</h3>
+      <p>Position: ({position.x.toFixed(1)}, {position.y.toFixed(1)})</p>
+      <p>Speed: {speed}x</p>
+      <p>Keys pressed: {keyCount}</p>
+      <p>Active keys: {pressedKeysList.join(', ')}</p>
+      
+      <h3>Controls</h3>
+      <p>Movement: Arrow keys or WASD</p>
+      <p>Run: Hold Shift</p>
+      <p>Sneak: Hold Ctrl</p>
+      <p>Boost: Hold Space</p>
+    </div>
+  );
+}
 ```
 
 ### Sequence Detection
@@ -282,31 +378,45 @@ const keys = useNormalizedKeys({
 Detect complex key patterns like sequences, chords, and hold patterns for advanced keyboard shortcuts and productivity workflows.
 
 ```tsx
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+
 const keys = useNormalizedKeys({
   sequences: [
     {
       id: 'vim-escape',
-      keys: ['j', 'k'],
+      keys: [Keys.j, Keys.k],
       type: 'sequence'
     },
     {
-      id: 'ctrl-s',
-      keys: ['Control', 's'],
+      id: 'save-document',
+      keys: [Keys.CONTROL, Keys.s],
       type: 'chord'
     },
     {
       id: 'scroll-acceleration',
-      keys: [{ key: 'Space', minHoldTime: 500 }],
+      keys: [{ key: Keys.SPACE, minHoldTime: 500 }],
       type: 'hold'
+    },
+    {
+      id: 'quick-select',
+      keys: [Keys.SHIFT, Keys.ARROW_RIGHT],
+      type: 'chord'
     }
   ],
   onSequenceMatch: (match) => {
     console.log(`Shortcut ${match.sequenceId} activated!`);
+    console.log(`Type: ${match.type}, Duration: ${match.duration}ms`);
   }
 });
 
 // Access matched sequences
 console.log(keys.sequences?.matches);
+
+// Check current hold progress
+if (keys.currentHolds.has('scroll-acceleration')) {
+  const holdProgress = keys.currentHolds.get('scroll-acceleration');
+  console.log(`Scroll acceleration: ${holdProgress?.progressPercent}%`);
+}
 ```
 
 ### Hold Detection
@@ -314,13 +424,15 @@ console.log(keys.sequences?.matches);
 Hold detection fires events when a key is held for a specified duration. Unlike tap/hold detection, hold sequences fire **during** the hold, not on release.
 
 ```tsx
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+
 const keys = useNormalizedKeys({
   sequences: [
     // Basic hold - fires after 500ms while space is still pressed
     {
       id: 'scroll-boost',
       name: 'Scroll Boost',
-      keys: [{ key: 'Space', minHoldTime: 500 }],
+      keys: [{ key: Keys.SPACE, minHoldTime: 500 }],
       type: 'hold'
     },
     // Hold with modifiers for text formatting
@@ -328,10 +440,17 @@ const keys = useNormalizedKeys({
       id: 'format-text',
       name: 'Format Text',
       keys: [{ 
-        key: 'f', 
+        key: Keys.f, 
         minHoldTime: 1000,
         modifiers: { shift: true }
       }],
+      type: 'hold'
+    },
+    // Tool activation hold
+    {
+      id: 'eyedropper-tool',
+      name: 'Eyedropper Tool',
+      keys: [{ key: Keys.i, minHoldTime: 300 }],
       type: 'hold'
     }
   ],
@@ -339,8 +458,11 @@ const keys = useNormalizedKeys({
     if (match.type === 'hold') {
       console.log(`Hold activated: ${match.sequenceId}`);
       // This fires DURING the hold, after minHoldTime
+      
+      if (match.sequenceId === 'eyedropper-tool') {
+        activateEyedropperMode();
+      }
     }
-  }
   }
 });
 ```
@@ -357,17 +479,32 @@ const keys = useNormalizedKeys({
 Selectively block browser default behaviors for specific key combinations or all keyboard events.
 
 ```tsx
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+
 // Prevent default for all keys
 const keys1 = useNormalizedKeys({ preventDefault: true });
 
 // Prevent default for specific keys
 const keys2 = useNormalizedKeys({ 
-  preventDefault: ['Tab', 'F5', 'F12'] 
+  preventDefault: [Keys.TAB, Keys.F5, Keys.F12, 'Ctrl+S', 'Ctrl+R'] 
+});
+
+// Prevent common browser shortcuts for productivity apps
+const keys3 = useNormalizedKeys({
+  preventDefault: [
+    'Ctrl+S',     // Save
+    'Ctrl+R',     // Refresh
+    'Ctrl+T',     // New tab
+    'Ctrl+W',     // Close tab
+    Keys.F5,      // Refresh
+    Keys.F11,     // Fullscreen
+    Keys.F12      // Dev tools
+  ]
 });
 
 // Check if default was prevented
 if (keys.lastEvent?.preventedDefault) {
-  console.log('Default behavior was prevented');
+  console.log('Default behavior was prevented for:', keys.lastEvent.key);
 }
 ```
 
@@ -376,17 +513,47 @@ if (keys.lastEvent?.preventedDefault) {
 Distinguish between quick key taps and longer holds based on configurable duration thresholds.
 
 ```tsx
-const keys = useNormalizedKeys({ tapHoldThreshold: 200 });
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+import { useEffect } from 'react';
 
-useEffect(() => {
-  if (keys.lastEvent?.type === 'keyup') {
-    if (keys.lastEvent.isTap) {
-      console.log(`${keys.lastEvent.key} was tapped (${keys.lastEvent.duration}ms)`);
-    } else if (keys.lastEvent.isHold) {
-      console.log(`${keys.lastEvent.key} was held (${keys.lastEvent.duration}ms)`);
+function TapHoldDetector() {
+  const keys = useNormalizedKeys({ tapHoldThreshold: 200 });
+
+  useEffect(() => {
+    if (keys.lastEvent?.type === 'keyup') {
+      const key = keys.lastEvent.key;
+      const duration = keys.lastEvent.duration || 0;
+      
+      if (keys.lastEvent.isTap) {
+        console.log(`${key} was tapped (${duration}ms)`);
+        
+        // Quick actions on tap
+        if (key === Keys.SPACE) {
+          jumpAction();
+        } else if (key === Keys.ENTER) {
+          confirmAction();
+        }
+      } else if (keys.lastEvent.isHold) {
+        console.log(`${key} was held (${duration}ms)`);
+        
+        // Different actions for held keys
+        if (key === Keys.SPACE) {
+          chargedJumpAction(duration);
+        } else if (key === Keys.ENTER) {
+          contextMenuAction();
+        }
+      }
     }
-  }
-}, [keys.lastEvent]);
+  }, [keys.lastEvent]);
+
+  return (
+    <div>
+      <p>Tap threshold: 200ms</p>
+      <p>Last action: {keys.lastEvent?.isTap ? 'TAP' : keys.lastEvent?.isHold ? 'HOLD' : 'None'}</p>
+      <p>Duration: {keys.lastEvent?.duration || 0}ms</p>
+    </div>
+  );
+}
 ```
 
 ### Continuous Input Handling
@@ -394,10 +561,13 @@ useEffect(() => {
 Handle continuous keyboard input for smooth navigation and editing with automatic focus management and browser shortcut prevention.
 
 ```tsx
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
+import { useEffect } from 'react';
+
 function TextEditorComponent() {
   const keys = useNormalizedKeys({
     excludeInputFields: true,
-    preventDefault: ['Tab', 'F5'], // Prevent specific shortcuts
+    preventDefault: [Keys.TAB, Keys.F5], // Prevent specific shortcuts
   });
 
   useEffect(() => {
@@ -407,14 +577,32 @@ function TextEditorComponent() {
         vertical: 0
       };
 
-      // Cursor navigation
-      if (keys.isKeyPressed('ArrowUp')) navigation.vertical -= 1;
-      if (keys.isKeyPressed('ArrowDown')) navigation.vertical += 1;
-      if (keys.isKeyPressed('ArrowLeft')) navigation.horizontal -= 1;
-      if (keys.isKeyPressed('ArrowRight')) navigation.horizontal += 1;
+      // Cursor navigation using Keys constants
+      if (keys.isKeyPressed(Keys.ARROW_UP)) navigation.vertical -= 1;
+      if (keys.isKeyPressed(Keys.ARROW_DOWN)) navigation.vertical += 1;
+      if (keys.isKeyPressed(Keys.ARROW_LEFT)) navigation.horizontal -= 1;
+      if (keys.isKeyPressed(Keys.ARROW_RIGHT)) navigation.horizontal += 1;
+
+      // Alternative WASD navigation
+      if (keys.isKeyPressed(Keys.w)) navigation.vertical -= 1;
+      if (keys.isKeyPressed(Keys.s)) navigation.vertical += 1;
+      if (keys.isKeyPressed(Keys.a)) navigation.horizontal -= 1;
+      if (keys.isKeyPressed(Keys.d)) navigation.horizontal += 1;
+
+      // Speed modifiers
+      let speed = 1;
+      if (keys.isKeyPressed(Keys.SHIFT_LEFT) || keys.isKeyPressed(Keys.SHIFT_RIGHT)) {
+        speed = 2; // Fast navigation
+      }
+      if (keys.isKeyPressed(Keys.CONTROL_LEFT) || keys.isKeyPressed(Keys.CONTROL_RIGHT)) {
+        speed = 0.5; // Precise navigation
+      }
 
       // Apply cursor movement
-      updateCursorPosition(navigation);
+      updateCursorPosition({
+        x: navigation.horizontal * speed,
+        y: navigation.vertical * speed
+      });
     };
 
     const editorLoop = setInterval(handleNavigation, 16); // 60 FPS
@@ -423,7 +611,8 @@ function TextEditorComponent() {
 
   return (
     <div>
-      <p>Use arrow keys to navigate</p>
+      <p>Use arrow keys or WASD to navigate</p>
+      <p>Hold Shift to move faster, Ctrl for precision</p>
       <p>Active keys: {Array.from(keys.pressedKeys).join(', ')}</p>
     </div>
   );
@@ -469,18 +658,18 @@ interface NormalizedKeysProviderProps {
 #### Example
 
 ```tsx
-import { NormalizedKeysProvider, holdSequence } from 'use-normalized-keys';
+import { NormalizedKeysProvider, holdSequence, Keys } from 'use-normalized-keys';
 
 function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('brush-pressure', 'Space', 1000),
-        holdSequence('pan-mode', 'h', 500)
+        holdSequence('brush-pressure', Keys.SPACE, 1000),
+        holdSequence('pan-mode', Keys.h, 500)
       ]}
       debug={true}
       tapHoldThreshold={200}
-      preventDefault={['Tab', 'F5']}
+      preventDefault={[Keys.TAB, Keys.F5]}
     >
       <DrawingToolsComponent />
     </NormalizedKeysProvider>
@@ -608,7 +797,7 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('brush-pressure', 'Space', 1000, { name: 'Brush Pressure' })
+        holdSequence('brush-pressure', Keys.SPACE, 1000, { name: 'Brush Pressure' })
       ]}
     >
       <BrushPressureIndicator />
@@ -669,9 +858,9 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('brush-pressure', 'Space', 750, { name: 'Brush Pressure' }),
-        holdSequence('pan-mode', 'h', 1000, { name: 'Pan Mode' }),
-        holdSequence('eyedropper', 'i', 500, { name: 'Eyedropper' })
+        holdSequence('brush-pressure', Keys.SPACE, 750, { name: 'Brush Pressure' }),
+        holdSequence('pan-mode', Keys.h, 1000, { name: 'Pan Mode' }),
+        holdSequence('eyedropper', Keys.i, 500, { name: 'Eyedropper' })
       ]}
     >
       <DrawingToolInterface />
@@ -708,11 +897,11 @@ function holdSequence(
 #### Example
 
 ```tsx
-import { holdSequence, useNormalizedKeys } from 'use-normalized-keys';
+import { holdSequence, useNormalizedKeys, Keys } from 'use-normalized-keys';
 
 const sequences = [
-  holdSequence('scroll-boost', 'Space', 750, { name: 'Scroll Boost' }),
-  holdSequence('format-text', 'f', 1000, { 
+  holdSequence('scroll-boost', Keys.SPACE, 750, { name: 'Scroll Boost' }),
+  holdSequence('format-text', Keys.f, 1000, { 
     name: 'Format Text',
     modifiers: { ctrl: true }
   })
@@ -747,9 +936,9 @@ function comboSequence(
 import { comboSequence, Keys, CommonSequences } from 'use-normalized-keys';
 
 const sequences = [
-  comboSequence('vim-escape', ['j', 'k'], { timeout: 300, name: 'Vim Escape' }),
+  comboSequence('vim-escape', [Keys.j, Keys.k], { timeout: 300, name: 'Vim Escape' }),
   // ✅ Use proper normalized key names, not unicode arrows
-  comboSequence('emoji-shortcut', [':', 'p', 'a', 'r', 't', 'y', ':'], { timeout: 1000 }),
+  comboSequence('emoji-shortcut', [Keys.COLON, Keys.p, Keys.a, Keys.r, Keys.t, Keys.y, Keys.COLON], { timeout: 1000 }),
   // 💡 Or use pre-defined sequences for common shortcuts
   comboSequence('quick-format', [...CommonSequences.FORMAT_SHORTCUT, Keys.f], { timeout: 500 })
 ];
@@ -775,11 +964,11 @@ function chordSequence(
 #### Example
 
 ```tsx
-import { chordSequence } from 'use-normalized-keys';
+import { chordSequence, Keys } from 'use-normalized-keys';
 
 const shortcuts = [
-  chordSequence('save', ['Control', 's']),
-  chordSequence('copy', ['Control', 'c'], { name: 'Copy' })
+  chordSequence('save', [Keys.CONTROL, Keys.s]),
+  chordSequence('copy', [Keys.CONTROL, Keys.c], { name: 'Copy' })
 ];
 ```
 
@@ -810,12 +999,12 @@ function holdSequences(
 #### Example
 
 ```tsx
-import { holdSequences } from 'use-normalized-keys';
+import { holdSequences, Keys } from 'use-normalized-keys';
 
 const chargeMoves = holdSequences([
-  { id: 'light-punch', key: 'j', duration: 200, name: 'Light Punch' },
-  { id: 'medium-punch', key: 'j', duration: 500, name: 'Medium Punch' },
-  { id: 'heavy-punch', key: 'j', duration: 1000, name: 'Heavy Punch' }
+  { id: 'light-punch', key: Keys.j, duration: 200, name: 'Light Punch' },
+  { id: 'medium-punch', key: Keys.j, duration: 500, name: 'Medium Punch' },
+  { id: 'heavy-punch', key: Keys.j, duration: 1000, name: 'Heavy Punch' }
 ]);
 ```
 

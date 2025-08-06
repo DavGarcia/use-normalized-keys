@@ -241,7 +241,7 @@ export default function InteractiveDemo({
         id: `custom-${Date.now()}`,
         name: 'Custom Sequence',
         keys: recordedKeys,
-        type: 'combo',
+        type: 'sequence',
         timeout: 1000
       };
       // Add to parent component sequences
@@ -697,7 +697,7 @@ export default function InteractiveDemo({
                           <span className="sequence-type-badge">
                             {seq.type === 'hold' && <span className="sequence-type">Hold</span>}
                             {seq.type === 'chord' && <span className="sequence-type">Chord</span>}
-                            {seq.type === 'combo' && <span className="sequence-type">Combo</span>}
+                            {seq.type === 'sequence' && <span className="sequence-type">Sequence</span>}
                           </span>
                         </div>
                         <div className="sequence-keys-row">
