@@ -56,7 +56,7 @@ const { lastEvent, pressedKeys, isKeyPressed } = useNormalizedKeys({
 
 ## Unified API with Context Provider
 
-The new unified approach uses a Context Provider and single hook for maximum simplicity:
+The Context Provider approach provides key info through a common context:
 
 ### Advanced Tool Switching with Hold Progress
 

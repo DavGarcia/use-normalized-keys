@@ -77,9 +77,9 @@ function TextEditor() {
 }
 ```
 
-## New Unified API
+## Normalized Provider
 
-The new unified approach uses a Context Provider and single hook for maximum simplicity:
+The Context Provider approach provides key info through a common context:
 
 ```tsx
 import { 

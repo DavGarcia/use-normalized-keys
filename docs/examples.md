@@ -4,7 +4,7 @@ Collection of practical examples showing how to use useNormalizedKeys in various
 
 ## Unified Hook API with 60fps Animations
 
-The following examples showcase the unified `useHoldSequence` hook with Context Provider for maximum simplicity and smooth 60fps animations.
+The following examples showcase the unified `useHoldSequence` hook with Context Provider to provide key info through a common context and smooth 60fps animations.
 
 ### Brush Pressure with Smooth Visual Effects
 
