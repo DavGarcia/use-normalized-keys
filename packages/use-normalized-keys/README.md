@@ -440,36 +440,6 @@ const shortcuts = [
 ];
 ```
 
-### fightingCombo
-
-Create fighting game style combos with numpad notation:
-
-```tsx
-import { fightingCombo } from 'use-normalized-keys';
-
-const fightingMoves = [
-  fightingCombo('hadouken', '236P'),           // Quarter circle forward + punch
-  fightingCombo('shoryuken', '623P'),          // Dragon punch motion
-  fightingCombo('sonic-boom', '[4]6P', {      // Charge back, forward + punch
-    chargeTime: 800
-  })
-];
-```
-
-### rhythmSequence  
-
-Create rhythm-based sequences:
-
-```tsx
-import { rhythmSequence } from 'use-normalized-keys';
-
-const rhythmPatterns = [
-  rhythmSequence('dance-move', ['↑', '↓', '←', '→'], 120), // 120 BPM
-  rhythmSequence('beat-match', ['Space', 'Space', 'Enter'], 140, {
-    tolerance: 50 // 50ms timing tolerance
-  })
-];
-```
 
 ### holdSequences
 

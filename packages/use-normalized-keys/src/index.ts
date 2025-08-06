@@ -809,9 +809,7 @@ export {
   holdSequence,
   comboSequence,
   chordSequence,
-  holdSequences,
-  fightingCombo,
-  rhythmSequence
+  holdSequences
 } from './sequenceHelpers';
 
 // Export Context API

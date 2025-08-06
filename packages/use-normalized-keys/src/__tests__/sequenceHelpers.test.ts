@@ -3,9 +3,7 @@ import {
   holdSequence,
   comboSequence,
   chordSequence,
-  holdSequences,
-  fightingCombo,
-  rhythmSequence
+  holdSequences
 } from '../sequenceHelpers';
 
 describe('sequenceHelpers', () => {
@@ -151,81 +149,4 @@ describe('sequenceHelpers', () => {
     });
   });
 
-  describe('fightingCombo', () => {
-    it('should convert numpad notation to arrows', () => {
-      const result = fightingCombo('hadouken', '236P');
-      
-      expect(result.keys).toEqual(['↓', '↘', '→', 'p']);
-      expect(result.type).toBe('sequence');
-    });
-
-    it('should handle complex notation', () => {
-      const result = fightingCombo('shoryuken', '623P');
-      
-      expect(result.keys).toEqual(['→', '↓', '↘', 'p']);
-    });
-
-    it('should filter out center position (5)', () => {
-      const result = fightingCombo('test', '456P');
-      
-      expect(result.keys).toEqual(['←', '→', 'p']);
-    });
-
-    it('should accept custom timeout', () => {
-      const result = fightingCombo('quick-move', '236P', { timeout: 400 });
-      
-      expect(result.timeout).toBe(400);
-    });
-
-    it('should handle charge notation', () => {
-      const result = fightingCombo('sonic-boom', '[4]6P');
-      
-      expect(result.name).toBe('Charge [4]6P');
-      expect(result.keys).toContain('→');
-      expect(result.keys).toContain('p');
-    });
-
-    it('should map different button types', () => {
-      const result = fightingCombo('test', '2MK');
-      
-      expect(result.keys).toEqual(['↓', 'i']); // MK maps to 'i'
-    });
-  });
-
-  describe('rhythmSequence', () => {
-    it('should create a rhythm-based sequence', () => {
-      const result = rhythmSequence('dance-move', ['↑', '↓', '←', '→'], 120);
-      
-      expect(result.id).toBe('dance-move');
-      expect(result.keys).toEqual(['↑', '↓', '←', '→']);
-      expect(result.type).toBe('sequence');
-      expect(result.timeout).toBe(500 + 125); // 60000/120 = 500ms per beat + 25% tolerance
-      expect(result.resetOnMismatch).toBe(true);
-    });
-
-    it('should normalize space in rhythm pattern', () => {
-      const result = rhythmSequence('jump-rhythm', [' ', '↑', ' ', '↓'], 60);
-      
-      expect(result.keys).toEqual(['Space', '↑', 'Space', '↓']);
-    });
-
-    it('should calculate timeout based on BPM', () => {
-      const result = rhythmSequence('fast-rhythm', ['a', 'b'], 240); // 240 BPM
-      
-      // 60000/240 = 250ms per beat, + 25% = 312.5ms
-      expect(result.timeout).toBe(312.5);
-    });
-
-    it('should accept custom tolerance', () => {
-      const result = rhythmSequence('precise-rhythm', ['a', 'b'], 120, { tolerance: 50 });
-      
-      expect(result.timeout).toBe(500 + 50); // 500ms beat + 50ms tolerance
-    });
-
-    it('should include BPM in default name', () => {
-      const result = rhythmSequence('test', ['a', 'b', 'c'], 140);
-      
-      expect(result.name).toBe('a b c @ 140BPM');
-    });
-  });
 });
