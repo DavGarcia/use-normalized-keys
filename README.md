@@ -7,6 +7,12 @@ A professional React hook for normalized keyboard input handling, designed for p
 [![Documentation](https://img.shields.io/badge/docs-vitepress-brightgreen)](https://davgarcia.github.io/use-normalized-keys/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## 🌐 Live Demos
+
+- **📖 [Documentation](https://davgarcia.github.io/use-normalized-keys/)** - Complete API reference and guides
+- **🚀 [Interactive Demo](https://davgarcia.github.io/use-normalized-keys/demo/)** - Test sequences and explore features  
+- **🎨 [Drawing Tools Demo](https://davgarcia.github.io/use-normalized-keys/tools/)** - Professional keyboard shortcuts for creative apps
+
 ## 📦 Packages
 
 This monorepo contains:

@@ -10,8 +10,7 @@ export default defineConfig({
     outDir: '../dist-tools',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'demo/tools/index.html'),
-        docs: resolve(__dirname, 'demo/tools-docs.html')
+        main: resolve(__dirname, 'demo/tools/index.html')
       }
     }
   },
