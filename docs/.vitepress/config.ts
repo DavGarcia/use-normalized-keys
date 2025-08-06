@@ -36,8 +36,8 @@ export default defineConfig({
         items: [
           { text: 'Demo Documentation', link: '/demo' },
           { text: 'Tools Documentation', link: '/tools' },
-          { text: 'Live Demo', link: '/demo/', target: '_blank' },
-          { text: 'Live Tools', link: '/tools/', target: '_blank' }
+          { text: 'Live Demo', link: 'https://davgarcia.github.io/use-normalized-keys/demo/', target: '_blank' },
+          { text: 'Live Tools', link: 'https://davgarcia.github.io/use-normalized-keys/tools/', target: '_blank' }
         ]
       }
     ],

@@ -10,7 +10,7 @@ export default defineConfig({
     outDir: '../dist-tools',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'demo/tools.html'),
+        main: resolve(__dirname, 'demo/tools/index.html'),
         docs: resolve(__dirname, 'demo/tools-docs.html')
       }
     }
@@ -22,6 +22,6 @@ export default defineConfig({
   },
   server: {
     port: 5174,
-    open: '/tools.html'
+    open: '/tools/'
   }
 });
