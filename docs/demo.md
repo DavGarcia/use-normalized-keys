@@ -71,40 +71,29 @@ The interactive demo includes:
 
 ### Quick Examples from the Demo
 
-While the full demo provides the best experience, here are some simple examples you can try in your own code:
+The demo uses our modern unified API with Context Provider. Here are some simple patterns you can try:
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { NormalizedKeysProvider, useHoldSequence, useNormalizedKeysContext, holdSequence, comboSequence } from 'use-normalized-keys';
 
-function SimpleDemo() {
-  const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [
-        {
-          id: 'konami',
-          keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'],
-          type: 'sequence'
-        }
-      ],
-      onSequenceMatch: (match) => {
-        console.log('Konami code activated!');
-      }
-    },
-    preventDefault: ['F5', 'F12'], // Block refresh and dev tools
-    tapHoldThreshold: 200
-  });
+function KeyboardTester() {
+  // Access the keyboard state through context
+  const keys = useNormalizedKeysContext();
+  
+  // Use unified hooks for specific sequences
+  const chargeJump = useHoldSequence('charge-jump');
   
   return (
     <div style={{ padding: '20px', fontFamily: 'monospace' }}>
-      <h3>useNormalizedKeys Quick Test</h3>
+      <h3>Unified API Demo</h3>
       
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ marginBottom: '15px' }}>
         <strong>Last Key:</strong> {keys.lastEvent?.key || 'None'}
         {keys.lastEvent?.isTap && ' (tap)'}
         {keys.lastEvent?.isHold && ' (hold)'}
       </div>
       
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ marginBottom: '15px' }}>
         <strong>Pressed Keys:</strong> {
           keys.pressedKeys.size > 0 
             ? Array.from(keys.pressedKeys).join(', ')
@@ -112,18 +101,33 @@ function SimpleDemo() {
         }
       </div>
       
-      <div style={{ marginBottom: '10px' }}>
-        <strong>Modifiers:</strong>
-        {' Shift: ' + (keys.activeModifiers.shift ? '✓' : '✗')}
-        {' Ctrl: ' + (keys.activeModifiers.ctrl ? '✓' : '✗')}
-        {' Alt: ' + (keys.activeModifiers.alt ? '✓' : '✗')}
+      {/* Hold sequence example */}
+      <div style={{ 
+        marginBottom: '15px',
+        padding: '10px',
+        border: '2px solid #ddd',
+        borderRadius: '5px',
+        transform: `scale(${chargeJump.scale})`,
+        opacity: chargeJump.opacity,
+        backgroundColor: chargeJump.isReady ? '#e8f5e8' : '#f8f8f8'
+      }}>
+        <h4>Charge Jump (Hold Space)</h4>
+        <div>Progress: {Math.round(chargeJump.progress)}%</div>
+        <div>Status: {chargeJump.isCharging ? '⚡ Charging' : chargeJump.isComplete ? '✅ Ready!' : '⏳ Hold Space'}</div>
+        {chargeJump.glow > 0 && (
+          <div style={{ 
+            marginTop: '5px',
+            filter: `drop-shadow(0 0 ${chargeJump.glow * 10}px #4CAF50)`
+          }}>
+            🌟 Glowing at {Math.round(chargeJump.glow * 100)}% intensity!
+          </div>
+        )}
       </div>
       
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(2, 1fr)', 
-        gap: '10px',
-        marginTop: '20px' 
+        gap: '10px' 
       }}>
         <div>
           <h4>WASD Movement:</h4>
@@ -134,56 +138,72 @@ function SimpleDemo() {
         </div>
         
         <div>
-          <h4>Arrow Keys:</h4>
-          <div>↑: {keys.isKeyPressed('ArrowUp') ? '🟢' : '⚪'}</div>
-          <div>←: {keys.isKeyPressed('ArrowLeft') ? '🟢' : '⚪'}</div>
-          <div>↓: {keys.isKeyPressed('ArrowDown') ? '🟢' : '⚪'}</div>
-          <div>→: {keys.isKeyPressed('ArrowRight') ? '🟢' : '⚪'}</div>
+          <h4>Sequences:</h4>
+          <div>Matches: {keys.sequences?.matches.length || 0}</div>
+          <div>Holds Active: {keys.currentHolds.size}</div>
         </div>
       </div>
-      
-      {keys.sequences?.matches.length > 0 && (
-        <div style={{ marginTop: '20px', color: '#00ff00' }}>
-          <strong>🎉 Sequence Matched!</strong>
-        </div>
-      )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('charge-jump', ' ', 750, { name: 'Charge Jump' }),
+        comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'], {
+          name: 'Konami Code',
+          timeout: 2000
+        })
+      ]}
+      preventDefault={['F5', 'F12']} // Block refresh and dev tools
+      tapHoldThreshold={200}
+    >
+      <KeyboardTester />
+    </NormalizedKeysProvider>
   );
 }
 ```
 
-### Simplified API Example
+### Unified API Example
 
-The demo also showcases our new simplified API with helper hooks:
+The demo showcases our unified API with Context Provider and the `useHoldSequence` hook:
 
 ```tsx
-import { useHoldProgress, useHoldAnimation, holdSequence } from 'use-normalized-keys';
+import { NormalizedKeysProvider, useHoldSequence, holdSequence } from 'use-normalized-keys';
 
 function ChargeAttackDemo() {
-  const { progress, isComplete } = useHoldProgress('charge-attack');
-  const { scale, glow, shake } = useHoldAnimation('charge-attack');
-  
-  useNormalizedKeys({
-    sequences: {
-      sequences: [
-        holdSequence('charge-attack', ' ', 1500, { name: 'Charge Attack' })
-      ]
-    }
-  });
+  const chargeAttack = useHoldSequence('charge-attack');
   
   return (
     <div style={{
-      transform: `scale(${scale}) translateX(${shake}px)`,
-      boxShadow: glow > 0 ? `0 0 ${20 * glow}px rgba(255, 0, 0, ${glow})` : 'none',
+      transform: `scale(${chargeAttack.scale})`,
+      opacity: chargeAttack.opacity,
+      boxShadow: chargeAttack.glow > 0 ? `0 0 ${chargeAttack.glow * 30}px #ff6b35` : 'none',
+      marginLeft: `${chargeAttack.shake}px`,
       padding: '20px',
-      background: isComplete ? '#ff4444' : '#444',
+      background: chargeAttack.isReady ? '#ff6b35' : '#333',
       color: 'white',
       borderRadius: '8px',
       transition: 'background 0.3s'
     }}>
       <h3>Hold Space to Charge!</h3>
-      <div>{isComplete ? '💥 READY!' : `Charging: ${Math.round(progress)}%`}</div>
+      <div>
+        {chargeAttack.isComplete ? '💥 READY!' : `Charging: ${Math.round(chargeAttack.progress)}%`}
+      </div>
+      <div>Elapsed: {chargeAttack.elapsedTime}ms</div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[holdSequence('charge-attack', ' ', 1500, { name: 'Charge Attack' })]}
+    >
+      <ChargeAttackDemo />
+    </NormalizedKeysProvider>
   );
 }
 ```
