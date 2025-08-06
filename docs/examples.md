@@ -12,7 +12,8 @@ The following examples showcase the unified `useHoldSequence` hook with Context 
 import { 
   NormalizedKeysProvider, 
   useHoldSequence, 
-  holdSequence 
+  holdSequence,
+  Keys 
 } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
@@ -77,9 +78,9 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' })
+        holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' })
       ]}
-      preventDefault={['F5', 'Tab']} // Prevent specific browser shortcuts
+      preventDefault={[Keys.F5, Keys.TAB]} // Prevent specific browser shortcuts
     >
       <PowerAttackExample />
     </NormalizedKeysProvider>
@@ -93,7 +94,8 @@ function App() {
 import { 
   NormalizedKeysProvider, 
   useHoldSequence, 
-  holdSequence 
+  holdSequence,
+  Keys 
 } from 'use-normalized-keys';
 import { useEffect, useState } from 'react';
 
@@ -248,10 +250,10 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
-        holdSequence('power-attack', 'f', 1200, { name: 'Power Attack' }),
-        holdSequence('shield', 's', 500, { name: 'Shield' }),
-        holdSequence('heal', 'h', 2000, { name: 'Heal' })
+        holdSequence('charge-jump', Keys.SPACE, 750, { name: 'Charge Jump' }),
+        holdSequence('power-attack', Keys.f, 1200, { name: 'Power Attack' }),
+        holdSequence('shield', Keys.s, 500, { name: 'Shield' }),
+        holdSequence('heal', Keys.h, 2000, { name: 'Heal' })
       ]}
       debug={false}
       tapHoldThreshold={150}
@@ -271,7 +273,7 @@ For advanced use cases that need direct control over the keyboard state, you can
 ### Basic Key Detection
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
 function BasicKeyDetection() {
@@ -289,7 +291,7 @@ function BasicKeyDetection() {
       <h2>Basic Key Detection</h2>
       <p>Last key: {keys.lastEvent?.key || 'None'}</p>
       <p>Pressed keys: {Array.from(keys.pressedKeys).join(', ') || 'None'}</p>
-      <p>Space pressed: {keys.isKeyPressed('Space') ? 'Yes' : 'No'}</p>
+      <p>Space pressed: {keys.isKeyPressed(Keys.SPACE) ? 'Yes' : 'No'}</p>
     </div>
   );
 }
@@ -298,14 +300,14 @@ function BasicKeyDetection() {
 ### Sequence Detection
 
 ```tsx
-import { useNormalizedKeys, comboSequence, chordSequence } from 'use-normalized-keys';
+import { useNormalizedKeys, comboSequence, chordSequence, Keys } from 'use-normalized-keys';
 
 function SequenceDemo() {
   const keys = useNormalizedKeys({
     sequences: {
       sequences: [
-        comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']),
-        chordSequence('save', ['Control', 's'])
+        comboSequence('konami', [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a]),
+        chordSequence('save', [Keys.CONTROL, Keys.s])
       ]
     }
   });
@@ -323,7 +325,7 @@ function SequenceDemo() {
 ## Hold Detection for Charged Actions
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 import { useState, useEffect } from 'react';
 
 function HoldDetectionExample() {
@@ -336,26 +338,26 @@ function HoldDetectionExample() {
         {
           id: 'light-charge',
           name: 'Light Charge',
-          keys: [{ key: 'Space', minHoldTime: 300 }],
+          keys: [{ key: Keys.SPACE, minHoldTime: 300 }],
           type: 'hold'
         },
         {
           id: 'medium-charge',
           name: 'Medium Charge',
-          keys: [{ key: 'Space', minHoldTime: 700 }],
+          keys: [{ key: Keys.SPACE, minHoldTime: 700 }],
           type: 'hold'
         },
         {
           id: 'full-charge',
           name: 'Full Charge',
-          keys: [{ key: 'Space', minHoldTime: 1200 }],
+          keys: [{ key: Keys.SPACE, minHoldTime: 1200 }],
           type: 'hold'
         },
         {
           id: 'power-attack',
           name: 'Power Attack',
           keys: [{ 
-            key: 'f', 
+            key: Keys.f, 
             minHoldTime: 800,
             modifiers: { shift: true }
           }],
@@ -385,7 +387,7 @@ function HoldDetectionExample() {
   
   // Reset charge on space release
   useEffect(() => {
-    if (keys.lastEvent?.type === 'keyup' && keys.lastEvent.key === ' ') {
+    if (keys.lastEvent?.type === 'keyup' && keys.lastEvent.key === Keys.SPACE) {
       if (chargeLevel > 0) {
         setPowerAttacks(prev => [...prev, `Jump with charge level ${chargeLevel}!`]);
         setChargeLevel(0);
@@ -432,7 +434,7 @@ function HoldDetectionExample() {
 ## preventDefault API & Browser Shortcut Blocking
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 import { useState } from 'react';
 
 function PreventDefaultExample() {
@@ -440,7 +442,7 @@ function PreventDefaultExample() {
   
   const keys = useNormalizedKeys({
     preventDefault: mode === 'all' ? true : 
-                   mode === 'specific' ? ['F5', 'F12', 'Tab'] : 
+                   mode === 'specific' ? [Keys.F5, Keys.F12, Keys.TAB] : 
                    false
   });
   
@@ -481,7 +483,7 @@ function PreventDefaultExample() {
 ## Tap vs Hold Detection
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 import { useState, useEffect } from 'react';
 
 function TapHoldExample() {
@@ -539,7 +541,7 @@ function TapHoldExample() {
 ## Cross-Platform Compatibility Demo
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
 function PlatformDemo() {
   const keys = useNormalizedKeys({ debug: true });
@@ -601,7 +603,7 @@ function PlatformDemo() {
 ## Complete Game with All Features
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 import { useState, useEffect, useRef } from 'react';
 
 // Type definitions for better TypeScript support
@@ -630,12 +632,12 @@ export default function AdvancedGame() {
       sequences: [
         {
           id: 'konami',
-          keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'],
+          keys: [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a],
           type: 'sequence'
         },
         {
           id: 'godmode',
-          keys: ['g', 'o', 'd'],
+          keys: [Keys.g, Keys.o, Keys.d],
           type: 'sequence'
         }
       ],
@@ -676,24 +678,24 @@ export default function AdvancedGame() {
         
         // Player movement with different speeds for tap vs hold
         const baseSpeed = player.speed;
-        const isRunning = keys.isKeyPressed('Shift');
+        const isRunning = keys.isKeyPressed(Keys.SHIFT);
         const currentSpeed = isRunning ? baseSpeed * 2 : baseSpeed;
         
-        if (keys.isKeyPressed('w') || keys.isKeyPressed('ArrowUp')) {
+        if (keys.isKeyPressed(Keys.w) || keys.isKeyPressed(Keys.ARROW_UP)) {
           player.y = Math.max(0, player.y - currentSpeed);
         }
-        if (keys.isKeyPressed('s') || keys.isKeyPressed('ArrowDown')) {
+        if (keys.isKeyPressed(Keys.s) || keys.isKeyPressed(Keys.ARROW_DOWN)) {
           player.y = Math.min(480, player.y + currentSpeed);
         }
-        if (keys.isKeyPressed('a') || keys.isKeyPressed('ArrowLeft')) {
+        if (keys.isKeyPressed(Keys.a) || keys.isKeyPressed(Keys.ARROW_LEFT)) {
           player.x = Math.max(0, player.x - currentSpeed);
         }
-        if (keys.isKeyPressed('d') || keys.isKeyPressed('ArrowRight')) {
+        if (keys.isKeyPressed(Keys.d) || keys.isKeyPressed(Keys.ARROW_RIGHT)) {
           player.x = Math.min(480, player.x + currentSpeed);
         }
         
         // Shooting with tap vs hold
-        if (keys.isKeyPressed('Space')) {
+        if (keys.isKeyPressed(Keys.SPACE)) {
           const now = Date.now();
           const lastBullet = bullets[bullets.length - 1];
           const timeSinceLastBullet = lastBullet ? now - lastBullet.id : 1000;
@@ -733,7 +735,7 @@ export default function AdvancedGame() {
   
   // Pause toggle - use keyup to avoid key repeat issues
   useEffect(() => {
-    if (keys.lastEvent?.key === 'p' && keys.lastEvent?.type === 'keyup') {
+    if (keys.lastEvent?.key === Keys.p && keys.lastEvent?.type === 'keyup') {
       setGameState(prev => ({ ...prev, paused: !prev.paused }));
     }
   }, [keys.lastEvent]);
@@ -764,7 +766,7 @@ export default function AdvancedGame() {
             height: 20,
             backgroundColor: gameState.cheatsEnabled ? '#00ff00' : '#0088ff',
             borderRadius: '50%',
-            boxShadow: keys.isKeyPressed('Shift') ? '0 0 10px #fff' : 'none'
+            boxShadow: keys.isKeyPressed(Keys.SHIFT) ? '0 0 10px #fff' : 'none'
           }}
         />
         

@@ -26,6 +26,7 @@ export default defineConfig({
         text: 'Documentation',
         items: [
           { text: 'API Reference', link: '/api' },
+          { text: 'Key Reference', link: '/key-reference' },
           { text: 'Configuration', link: '/configuration' },
           { text: 'Examples', link: '/examples' }
         ]

@@ -5,6 +5,7 @@ import {
   SequenceDefinition, 
   MatchedSequence,
   CurrentHolds,
+  Keys
 } from '../src';
 import './InteractiveDemo.css';
 
@@ -89,6 +90,8 @@ interface InteractiveDemoProps {
   setDebugMode: (value: boolean) => void;
   showSequences: boolean;
   setShowSequences: (value: boolean) => void;
+  preventDefault: boolean;
+  setPreventDefault: (value: boolean) => void;
   customHoldTime: number;
   setCustomHoldTime: (value: number) => void;
   customSequences: SequenceDefinition[];
@@ -104,6 +107,8 @@ export default function InteractiveDemo({
   setDebugMode,
   showSequences,
   setShowSequences,
+  preventDefault,
+  setPreventDefault,
   customHoldTime,
   setCustomHoldTime,
   customSequences,
@@ -111,7 +116,6 @@ export default function InteractiveDemo({
   matchedSequences,
   sequences,
 }: InteractiveDemoProps) {
-  const [showDebugPanel, setShowDebugPanel] = useState(true);
   const [eventHistory, setEventHistory] = useState<any[]>([]);
   const [snackbar, setSnackbar] = useState<{ message: string; visible: boolean }>({ message: '', visible: false });
   const [recordingSequence, setRecordingSequence] = useState(false);
@@ -295,20 +299,6 @@ export default function InteractiveDemo({
         </div>
       </header>
 
-      <div className="demo-info-bar">
-        <span className="info-item">
-          <strong>Platform:</strong> {platform}
-        </span>
-        <span className="info-item">
-          <strong>Events:</strong> {metrics.eventCount}
-        </span>
-        <span className="info-item">
-          <strong>Avg Process:</strong> {metrics.avgProcessTime?.toFixed(2) || '0.00'}ms
-        </span>
-        <span className="info-item">
-          <strong>Pressed Keys:</strong> {pressedKeys.size}
-        </span>
-      </div>
 
       <div className="demo-controls">
         <label className="control-item">
@@ -338,27 +328,11 @@ export default function InteractiveDemo({
         <label className="control-item">
           <input 
             type="checkbox" 
-            checked={showDebugPanel}
-            onChange={(e) => setShowDebugPanel(e.target.checked)}
+            checked={preventDefault}
+            onChange={(e) => setPreventDefault(e.target.checked)}
           />
-          Show Debug Panel
+          Prevent Default (Browser shortcuts like F5, Ctrl+S, etc.)
         </label>
-        <div className="control-item status-indicator">
-          <span className="status-label">preventDefault: </span>
-          <span className="status-value enabled">✓ Enabled</span>
-          <span className="status-description">
-            (Browser shortcuts like F5, Ctrl+S, etc. are prevented)
-          </span>
-        </div>
-        <div className="control-item status-indicator">
-          <span className="status-label">Context Provider: </span>
-          <span className="status-value enabled">
-            ✓ Active
-          </span>
-          <span className="status-description">
-            (All hooks share state via Provider)
-          </span>
-        </div>
       </div>
 
       <div className="demo-grid">
@@ -731,11 +705,11 @@ export default function InteractiveDemo({
                             const formatKey = (keyStr: string) => {
                               // Replace arrow key names with actual arrows
                               const arrowMap: { [key: string]: string } = {
-                                'ArrowUp': '↑',
-                                'ArrowDown': '↓', 
-                                'ArrowLeft': '←',
-                                'ArrowRight': '→',
-                                ' ': 'Space'
+                                [Keys.ARROW_UP]: '↑',
+                                [Keys.ARROW_DOWN]: '↓', 
+                                [Keys.ARROW_LEFT]: '←',
+                                [Keys.ARROW_RIGHT]: '→',
+                                [Keys.SPACE]: 'Space'
                               };
                               return arrowMap[keyStr] || keyStr;
                             };
@@ -792,52 +766,6 @@ export default function InteractiveDemo({
           />
         </section>
 
-        {/* Debug Panel */}
-        {showDebugPanel && (
-          <section className="demo-section debug-section">
-            <h2>Context Provider Debug Panel</h2>
-          <div className="debug-grid">
-            <div className="debug-box">
-              <h3>Provider Status</h3>
-              <div className="debug-item">
-                <strong>Active:</strong> <span className="status-indicator active">Yes</span>
-              </div>
-              <div className="debug-item">
-                <strong>State Source:</strong> NormalizedKeysContext
-              </div>
-              <div className="debug-item">
-                <strong>Helper Hooks:</strong> Enabled
-              </div>
-            </div>
-            
-            <div className="debug-box">
-              <h3>Shared State Info</h3>
-              <div className="debug-item">
-                <strong>Pressed Keys:</strong> {pressedKeys.size}
-              </div>
-              <div className="debug-item">
-                <strong>Active Holds:</strong> {currentHolds.size}
-              </div>
-              <div className="debug-item">
-                <strong>Active Modifiers:</strong> {Object.entries(activeModifiers).filter(([_, v]) => v).map(([k]) => k).join(', ') || 'None'}
-              </div>
-            </div>
-
-            <div className="debug-box">
-              <h3>Performance</h3>
-              <div className="debug-item">
-                <strong>Single Instance:</strong> <span className="status-indicator active">✓</span>
-              </div>
-              <div className="debug-item">
-                <strong>Event Listeners:</strong> 1 set
-              </div>
-              <div className="debug-item">
-                <strong>Re-renders:</strong> Optimized
-              </div>
-            </div>
-          </div>
-          </section>
-        )}
 
         {/* Platform Info */}
         <section className="demo-section platform-section">

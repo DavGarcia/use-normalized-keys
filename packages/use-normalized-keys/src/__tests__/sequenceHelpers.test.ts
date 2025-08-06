@@ -5,44 +5,45 @@ import {
   chordSequence,
   holdSequences
 } from '../sequenceHelpers';
+import { Keys } from '../keyConstants';
 
 describe('sequenceHelpers', () => {
   describe('holdSequence', () => {
     it('should create a basic hold sequence', () => {
-      const result = holdSequence('test-hold', 'f', 1000);
+      const result = holdSequence('test-hold', Keys.f, 1000);
       
       expect(result).toEqual({
         id: 'test-hold',
         name: 'Hold f',
-        keys: [{ key: 'f', minHoldTime: 1000 }],
+        keys: [{ key: Keys.f, minHoldTime: 1000 }],
         type: 'hold'
       });
     });
 
     it('should normalize space key', () => {
-      const result = holdSequence('charge-jump', ' ', 750);
+      const result = holdSequence('charge-jump', Keys.SPACE, 750);
       
       expect(result.keys[0]).toEqual({
-        key: 'Space',
+        key: Keys.SPACE,
         minHoldTime: 750
       });
       expect(result.name).toBe('Hold Space');
     });
 
     it('should accept custom name', () => {
-      const result = holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' });
+      const result = holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' });
       
       expect(result.name).toBe('Power Attack');
     });
 
     it('should include modifiers when provided', () => {
-      const result = holdSequence('special-move', 's', 600, {
+      const result = holdSequence('special-move', Keys.s, 600, {
         name: 'Special Move',
         modifiers: { ctrl: true, shift: false }
       });
       
       expect(result.keys[0]).toEqual({
-        key: 's',
+        key: Keys.s,
         minHoldTime: 600,
         modifiers: { ctrl: true, shift: false }
       });
@@ -51,31 +52,31 @@ describe('sequenceHelpers', () => {
 
   describe('comboSequence', () => {
     it('should create a basic combo sequence', () => {
-      const result = comboSequence('test-combo', ['a', 'b', 'c']);
+      const result = comboSequence('test-combo', [Keys.a, Keys.b, Keys.c]);
       
       expect(result).toEqual({
         id: 'test-combo',
         name: 'a → b → c',
-        keys: ['a', 'b', 'c'],
+        keys: [Keys.a, Keys.b, Keys.c],
         type: 'sequence',
         timeout: 1000
       });
     });
 
     it('should normalize space keys in combo', () => {
-      const result = comboSequence('jump-combo', ['↑', ' ', '↑']);
+      const result = comboSequence('jump-combo', [Keys.ARROW_UP, Keys.SPACE, Keys.ARROW_UP]);
       
-      expect(result.keys).toEqual(['↑', 'Space', '↑']);
+      expect(result.keys).toEqual([Keys.ARROW_UP, Keys.SPACE, Keys.ARROW_UP]);
     });
 
     it('should accept custom timeout', () => {
-      const result = comboSequence('quick-combo', ['j', 'k'], { timeout: 300 });
+      const result = comboSequence('quick-combo', [Keys.j, Keys.k], { timeout: 300 });
       
       expect(result.timeout).toBe(300);
     });
 
     it('should include optional flags when provided', () => {
-      const result = comboSequence('flexible-combo', ['a', 'b'], {
+      const result = comboSequence('flexible-combo', [Keys.a, Keys.b], {
         allowOtherKeys: true,
         resetOnMismatch: false,
         caseSensitive: true
@@ -89,24 +90,24 @@ describe('sequenceHelpers', () => {
 
   describe('chordSequence', () => {
     it('should create a basic chord sequence', () => {
-      const result = chordSequence('save', ['Control', 's']);
+      const result = chordSequence('save', [Keys.CONTROL, Keys.s]);
       
       expect(result).toEqual({
         id: 'save',
         name: 'Control + s',
-        keys: ['Control', 's'],
+        keys: [Keys.CONTROL, Keys.s],
         type: 'chord'
       });
     });
 
     it('should accept custom name', () => {
-      const result = chordSequence('copy', ['Control', 'c'], { name: 'Copy' });
+      const result = chordSequence('copy', [Keys.CONTROL, Keys.c], { name: 'Copy' });
       
       expect(result.name).toBe('Copy');
     });
 
     it('should include allowOtherKeys when provided', () => {
-      const result = chordSequence('test-chord', ['a', 'b'], { allowOtherKeys: true });
+      const result = chordSequence('test-chord', [Keys.a, Keys.b], { allowOtherKeys: true });
       
       expect(result.allowOtherKeys).toBe(true);
     });
@@ -115,9 +116,9 @@ describe('sequenceHelpers', () => {
   describe('holdSequences', () => {
     it('should create multiple hold sequences', () => {
       const configs = [
-        { id: 'light-punch', key: 'j', duration: 200 },
-        { id: 'medium-punch', key: 'j', duration: 500 },
-        { id: 'heavy-punch', key: 'j', duration: 1000 }
+        { id: 'light-punch', key: Keys.j, duration: 200 },
+        { id: 'medium-punch', key: Keys.j, duration: 500 },
+        { id: 'heavy-punch', key: Keys.j, duration: 1000 }
       ];
       
       const results = holdSequences(configs);
@@ -135,7 +136,7 @@ describe('sequenceHelpers', () => {
       const configs = [
         { 
           id: 'special-1', 
-          key: 's', 
+          key: Keys.s, 
           duration: 500, 
           name: 'Special Move 1',
           modifiers: { ctrl: true }

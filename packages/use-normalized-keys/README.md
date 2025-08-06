@@ -31,7 +31,7 @@ npm install use-normalized-keys
 ### Basic Key Detection
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
 function App() {
   const keys = useNormalizedKeys();
@@ -39,7 +39,7 @@ function App() {
   return (
     <div>
       <p>Pressed keys: {Array.from(keys.pressedKeys).join(', ')}</p>
-      <p>Space pressed: {keys.isKeyPressed('Space') ? 'Yes' : 'No'}</p>
+      <p>Space pressed: {keys.isKeyPressed(Keys.SPACE) ? 'Yes' : 'No'}</p>
       <p>Last key: {keys.lastEvent?.key} {keys.lastEvent?.isTap && '(tap)'}</p>
     </div>
   );
@@ -49,7 +49,7 @@ function App() {
 ### With Context Provider & Hold Sequences
 
 ```tsx
-import { NormalizedKeysProvider, useHoldSequence, holdSequence } from 'use-normalized-keys';
+import { NormalizedKeysProvider, useHoldSequence, holdSequence, Keys } from 'use-normalized-keys';
 
 function ChargeButton() {
   const charge = useHoldSequence('power-charge');
@@ -69,7 +69,7 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-charge', 'Space', 1000)
+        holdSequence('power-charge', Keys.SPACE, 1000)
       ]}
     >
       <ChargeButton />
@@ -95,11 +95,11 @@ function App() {
 const keys = useNormalizedKeys();
 
 // Check if specific keys are pressed
-if (keys.isKeyPressed('w')) moveUp();
-if (keys.isKeyPressed('Space')) jump();
+if (keys.isKeyPressed(Keys.w)) moveUp();
+if (keys.isKeyPressed(Keys.SPACE)) jump();
 
 // Get all pressed keys
-console.log(Array.from(keys.pressedKeys)); // ['w', 'Space', 'Shift']
+console.log(Array.from(keys.pressedKeys)); // [Keys.w, Keys.SPACE, Keys.SHIFT]
 
 // Access modifier states
 if (keys.activeModifiers.shift) runFaster();
@@ -113,17 +113,17 @@ const keys = useNormalizedKeys({
     sequences: [
       {
         id: 'konami',
-        keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'],
+        keys: [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a],
         type: 'sequence'
       },
       {
         id: 'save',
-        keys: ['Control', 's'],
+        keys: [Keys.CONTROL, Keys.s],
         type: 'chord'
       },
       {
         id: 'charge-jump',
-        keys: [{ key: 'Space', minHoldTime: 750 }],
+        keys: [{ key: Keys.SPACE, minHoldTime: 750 }],
         type: 'hold'
       }
     ],
@@ -146,7 +146,7 @@ const keys = useNormalizedKeys({
       {
         id: 'charge-jump',
         name: 'Charge Jump',
-        keys: [{ key: 'Space', minHoldTime: 500 }],
+        keys: [{ key: Keys.SPACE, minHoldTime: 500 }],
         type: 'hold'
       },
       // Hold with modifiers
@@ -154,7 +154,7 @@ const keys = useNormalizedKeys({
         id: 'special-move',
         name: 'Special Move',
         keys: [{ 
-          key: 's', 
+          key: Keys.s, 
           minHoldTime: 600,
           modifiers: { ctrl: true }
         }],
@@ -207,7 +207,7 @@ if (keys.lastEvent?.type === 'keyup') {
 ```tsx
 // Prevent specific keys
 const keys = useNormalizedKeys({
-  preventDefault: ['Tab', 'F5', 'F11']
+  preventDefault: [Keys.TAB, Keys.F5, Keys.F11]
 });
 
 // Prevent all keys (useful for games)
@@ -225,7 +225,7 @@ function GameComponent() {
     tapHoldThreshold: 150,
     sequences: {
       sequences: [
-        { id: 'special-move', keys: ['a', 's', 'd', 'f'], type: 'sequence' }
+        { id: 'special-move', keys: [Keys.a, Keys.s, Keys.d, Keys.f], type: 'sequence' }
       ],
       onSequenceMatch: (match) => {
         if (match.sequenceId === 'special-move') {
@@ -239,13 +239,13 @@ function GameComponent() {
     const gameLoop = () => {
       // Movement
       const speed = keys.activeModifiers.shift ? 2 : 1;
-      if (keys.isKeyPressed('w')) player.y -= speed;
-      if (keys.isKeyPressed('s')) player.y += speed;
-      if (keys.isKeyPressed('a')) player.x -= speed;
-      if (keys.isKeyPressed('d')) player.x += speed;
+      if (keys.isKeyPressed(Keys.w)) player.y -= speed;
+      if (keys.isKeyPressed(Keys.s)) player.y += speed;
+      if (keys.isKeyPressed(Keys.a)) player.x -= speed;
+      if (keys.isKeyPressed(Keys.d)) player.x += speed;
       
       // Actions
-      if (keys.isKeyPressed('Space')) player.jump();
+      if (keys.isKeyPressed(Keys.SPACE)) player.jump();
       
       requestAnimationFrame(gameLoop);
     };
@@ -264,8 +264,7 @@ function GameComponent() {
 The all-in-one unified hook that combines progress tracking, smooth animations, and game events into a single optimized hook with **60fps requestAnimationFrame** animations:
 
 ```tsx
-import { useHoldSequence, NormalizedKeysProvider } from 'use-normalized-keys';
-import { holdSequence } from 'use-normalized-keys';
+import { useHoldSequence, NormalizedKeysProvider, holdSequence, Keys } from 'use-normalized-keys';
 
 function PowerAttackButton() {
   const powerAttack = useHoldSequence('power-attack');
@@ -296,7 +295,7 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' })
+        holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' })
       ]}
     >
       <PowerAttackButton />
@@ -308,8 +307,7 @@ function App() {
 ### Game Character with Multiple Hold Sequences
 
 ```tsx
-import { useHoldSequence, NormalizedKeysProvider } from 'use-normalized-keys';
-import { holdSequence } from 'use-normalized-keys';
+import { useHoldSequence, NormalizedKeysProvider, holdSequence, Keys } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
 function GameCharacter() {
@@ -364,9 +362,9 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
-        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' }),
-        holdSequence('shield', 's', 500, { name: 'Shield' })
+        holdSequence('charge-jump', Keys.SPACE, 750, { name: 'Charge Jump' }),
+        holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' }),
+        holdSequence('shield', Keys.s, 500, { name: 'Shield' })
       ]}
     >
       <GameCharacter />
@@ -390,15 +388,15 @@ function App() {
 Create hold sequence definitions easily:
 
 ```tsx
-import { holdSequence } from 'use-normalized-keys';
+import { holdSequence, Keys } from 'use-normalized-keys';
 
 const sequences = [
-  holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
-  holdSequence('power-attack', 'f', 1000, { 
+  holdSequence('charge-jump', Keys.SPACE, 750, { name: 'Charge Jump' }),
+  holdSequence('power-attack', Keys.f, 1000, { 
     name: 'Power Attack',
     modifiers: { ctrl: true }
   }),
-  holdSequence('special-move', 's', 600)
+  holdSequence('special-move', Keys.s, 600)
 ];
 
 function GameComponent() {
@@ -414,12 +412,12 @@ function GameComponent() {
 Create sequential combo definitions:
 
 ```tsx
-import { comboSequence } from 'use-normalized-keys';
+import { comboSequence, Keys, CommonSequences } from 'use-normalized-keys';
 
 const combos = [
-  comboSequence('konami', ['↑', '↑', '↓', '↓', '←', '→', '←', '→', 'b', 'a']),
-  comboSequence('hadouken', ['↓', '↘', '→', 'p'], { timeout: 500 }),
-  comboSequence('vim-escape', ['j', 'k'], { 
+  comboSequence('konami', CommonSequences.KONAMI_CODE),
+  comboSequence('hadouken', [...CommonSequences.HADOUKEN, Keys.p], { timeout: 500 }),
+  comboSequence('vim-escape', CommonSequences.VIM_ESCAPE, { 
     name: 'Vim Escape', 
     timeout: 300 
   })
@@ -431,12 +429,12 @@ const combos = [
 Create simultaneous key combination definitions:
 
 ```tsx
-import { chordSequence } from 'use-normalized-keys';
+import { chordSequence, Keys } from 'use-normalized-keys';
 
 const shortcuts = [
-  chordSequence('save', ['Control', 's']),
-  chordSequence('copy', ['Control', 'c'], { name: 'Copy' }),
-  chordSequence('screenshot', ['Control', 'Shift', 's'])
+  chordSequence('save', [Keys.CONTROL, Keys.s]),
+  chordSequence('copy', [Keys.CONTROL, Keys.c], { name: 'Copy' }),
+  chordSequence('screenshot', [Keys.CONTROL, Keys.SHIFT, Keys.s])
 ];
 ```
 
@@ -446,12 +444,12 @@ const shortcuts = [
 Create multiple hold sequences with a common pattern:
 
 ```tsx
-import { holdSequences } from 'use-normalized-keys';
+import { holdSequences, Keys } from 'use-normalized-keys';
 
 const chargeMoves = holdSequences([
-  { id: 'light-punch', key: 'j', duration: 200, name: 'Light Punch' },
-  { id: 'medium-punch', key: 'j', duration: 500, name: 'Medium Punch' },
-  { id: 'heavy-punch', key: 'j', duration: 1000, name: 'Heavy Punch' }
+  { id: 'light-punch', key: Keys.j, duration: 200, name: 'Light Punch' },
+  { id: 'medium-punch', key: Keys.j, duration: 500, name: 'Medium Punch' },
+  { id: 'heavy-punch', key: Keys.j, duration: 1000, name: 'Heavy Punch' }
 ]);
 ```
 
@@ -463,20 +461,21 @@ The **NormalizedKeysProvider** simplifies setup and provides automatic Context m
 import { 
   NormalizedKeysProvider, 
   useHoldSequence, 
-  holdSequence 
+  holdSequence,
+  Keys 
 } from 'use-normalized-keys';
 
 function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', 'Space', 750),
-        holdSequence('power-attack', 'f', 1000),
-        holdSequence('shield', 's', 500)
+        holdSequence('charge-jump', Keys.SPACE, 750),
+        holdSequence('power-attack', Keys.f, 1000),
+        holdSequence('shield', Keys.s, 500)
       ]}
       debug={true}
       tapHoldThreshold={200}
-      preventDefault={['Tab', 'F5']}
+      preventDefault={[Keys.TAB, Keys.F5]}
       excludeInputFields={true}
     >
       <GameComponent />

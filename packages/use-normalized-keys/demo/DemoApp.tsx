@@ -5,40 +5,41 @@ import {
   holdSequence,
   comboSequence,
   chordSequence,
-  MatchedSequence
+  MatchedSequence,
+  Keys
 } from '../src';
 import InteractiveDemo from './InteractiveDemo';
 
 // Predefined sequences for demo
 const getBaseSequences = (): SequenceDefinition[] => [
   // Combo sequences
-  comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'], {
+  comboSequence('konami', [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a], {
     name: 'Konami Code',
     timeout: 2000
   }),
   
   // Chord sequences
-  chordSequence('save', ['Control', 's'], { name: 'Save (Ctrl+S)' }),
-  chordSequence('copy', ['Control', 'c'], { name: 'Copy (Ctrl+C)' }),
-  chordSequence('paste', ['Control', 'v'], { name: 'Paste (Ctrl+V)' }),
-  chordSequence('undo', ['Control', 'z'], { name: 'Undo (Ctrl+Z)' }),
-  chordSequence('select-all', ['Control', 'a'], { name: 'Select All (Ctrl+A)' }),
+  chordSequence('save', [Keys.CONTROL, Keys.s], { name: 'Save (Ctrl+S)' }),
+  chordSequence('copy', [Keys.CONTROL, Keys.c], { name: 'Copy (Ctrl+C)' }),
+  chordSequence('paste', [Keys.CONTROL, Keys.v], { name: 'Paste (Ctrl+V)' }),
+  chordSequence('undo', [Keys.CONTROL, Keys.z], { name: 'Undo (Ctrl+Z)' }),
+  chordSequence('select-all', [Keys.CONTROL, Keys.a], { name: 'Select All (Ctrl+A)' }),
   
   // Hold sequences
-  holdSequence('charge-jump', ' ', 750, { name: 'Charge Jump (Hold Space)' }),
-  holdSequence('power-attack', 'f', 1000, { name: 'Power Attack (Hold F)' }),
-  holdSequence('heavy-punch', 'h', 2000, { name: 'Heavy Punch (Hold H)' }),
-  holdSequence('special-move', 'q', 600, { 
+  holdSequence('charge-jump', Keys.SPACE, 750, { name: 'Charge Jump (Hold Space)' }),
+  holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack (Hold F)' }),
+  holdSequence('heavy-punch', Keys.h, 2000, { name: 'Heavy Punch (Hold H)' }),
+  holdSequence('special-move', Keys.q, 600, { 
     name: 'Special Move (Hold Ctrl+Q)',
     modifiers: { ctrl: true }
   }),
   
   // Regular sequences
-  comboSequence('vim-escape', ['j', 'k'], {
+  comboSequence('vim-escape', [Keys.j, Keys.k], {
     name: 'Vim Escape (jk)',
     timeout: 300
   }),
-  comboSequence('hello', ['h', 'e', 'l', 'l', 'o'], {
+  comboSequence('hello', [Keys.h, Keys.e, Keys.l, Keys.l, Keys.o], {
     name: 'Type "hello"',
     timeout: 1000
   }),
@@ -52,6 +53,7 @@ export default function DemoApp() {
   const [excludeInputs, setExcludeInputs] = useState(true);
   const [debugMode, setDebugMode] = useState(false);
   const [showSequences, setShowSequences] = useState(true);
+  const [preventDefault, setPreventDefault] = useState(true);
   const [customHoldTime, setCustomHoldTime] = useState(500);
   const [customSequences, setCustomSequences] = useState<SequenceDefinition[]>([]);
   const [matchedSequences, setMatchedSequences] = useState<MatchedSequence[]>([]);
@@ -59,7 +61,7 @@ export default function DemoApp() {
   // Build sequences array including custom hold
   const sequences = React.useMemo(() => {
     const base = getBaseSequences();
-    const customHold = holdSequence('custom-hold', 'x', customHoldTime, {
+    const customHold = holdSequence('custom-hold', Keys.x, customHoldTime, {
       name: `Custom Hold (${customHoldTime}ms)`
     });
     return [...base, customHold, ...customSequences];
@@ -79,6 +81,8 @@ export default function DemoApp() {
     setDebugMode,
     showSequences,
     setShowSequences,
+    preventDefault,
+    setPreventDefault,
     customHoldTime,
     setCustomHoldTime,
     customSequences,
@@ -92,7 +96,7 @@ export default function DemoApp() {
       excludeInputFields={excludeInputs}
       debug={debugMode}
       tapHoldThreshold={200}
-      preventDefault={true}
+      preventDefault={preventDefault}
       sequences={showSequences ? {
         sequences,
         onSequenceMatch: handleSequenceMatch,

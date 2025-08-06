@@ -24,13 +24,13 @@ useNormalizedKeys is a comprehensive React hook that provides consistent, featur
 ## Quick Example
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
 function GameComponent() {
   const keys = useNormalizedKeys({
     sequences: {
       sequences: [
-        { id: 'konami', keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown'], type: 'sequence' }
+        { id: 'konami', keys: [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN], type: 'sequence' }
       ],
       onSequenceMatch: (match) => console.log(`${match.sequenceId} code entered!`)
     },
@@ -49,10 +49,10 @@ function GameComponent() {
       <div>
         <h3>WASD Movement</h3>
         <ul>
-          <li>W (Up): {keys.isKeyPressed('w') ? '🟢' : '⚪'}</li>
-          <li>A (Left): {keys.isKeyPressed('a') ? '🟢' : '⚪'}</li>
-          <li>S (Down): {keys.isKeyPressed('s') ? '🟢' : '⚪'}</li>
-          <li>D (Right): {keys.isKeyPressed('d') ? '🟢' : '⚪'}</li>
+          <li>W (Up): {keys.isKeyPressed(Keys.w) ? '🟢' : '⚪'}</li>
+          <li>A (Left): {keys.isKeyPressed(Keys.a) ? '🟢' : '⚪'}</li>
+          <li>S (Down): {keys.isKeyPressed(Keys.s) ? '🟢' : '⚪'}</li>
+          <li>D (Right): {keys.isKeyPressed(Keys.d) ? '🟢' : '⚪'}</li>
         </ul>
       </div>
       
@@ -83,7 +83,8 @@ The new unified approach uses a Context Provider and single hook for maximum sim
 import { 
   NormalizedKeysProvider, 
   useHoldSequence, 
-  holdSequence 
+  holdSequence,
+  Keys 
 } from 'use-normalized-keys';
 
 function PowerAttack() {
@@ -107,7 +108,7 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-attack', 'q', 1000, { name: 'Power Attack' })
+        holdSequence('power-attack', Keys.q, 1000, { name: 'Power Attack' })
       ]}
     >
       <PowerAttack />

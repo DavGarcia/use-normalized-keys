@@ -7,6 +7,7 @@
  */
 
 import type { SequenceDefinition, SequenceKey } from './sequenceDetection';
+import { Keys } from './keyConstants';
 
 /**
  * Creates a hold sequence definition
@@ -18,9 +19,9 @@ import type { SequenceDefinition, SequenceKey } from './sequenceDetection';
  * @returns SequenceDefinition for a hold sequence
  * 
  * @example
- * holdSequence('charge-jump', ' ', 750)
- * holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' })
- * holdSequence('special-move', 's', 600, { modifiers: { ctrl: true } })
+ * holdSequence('charge-jump', Keys.SPACE, 750)
+ * holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' })
+ * holdSequence('special-move', Keys.s, 600, { modifiers: { ctrl: true } })
  */
 export function holdSequence(
   id: string,
@@ -62,9 +63,9 @@ export function holdSequence(
  * @returns SequenceDefinition for a sequential combo
  * 
  * @example
- * comboSequence('konami', ['↑', '↑', '↓', '↓', '←', '→', '←', '→', 'b', 'a'])
- * comboSequence('hadouken', ['↓', '↘', '→', 'p'], { timeout: 500 })
- * comboSequence('vim-escape', ['j', 'k'], { name: 'Vim Escape', timeout: 300 })
+ * comboSequence('konami', [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a])
+ * comboSequence('hadouken', [Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT, Keys.ARROW_RIGHT, Keys.p], { timeout: 500 })
+ * comboSequence('vim-escape', [Keys.j, Keys.k], { name: 'Vim Escape', timeout: 300 })
  */
 export function comboSequence(
   id: string,
@@ -101,9 +102,9 @@ export function comboSequence(
  * @returns SequenceDefinition for a chord
  * 
  * @example
- * chordSequence('save', ['Control', 's'])
- * chordSequence('copy', ['Control', 'c'], { name: 'Copy' })
- * chordSequence('screenshot', ['Control', 'Shift', 's'])
+ * chordSequence('save', [Keys.CONTROL, Keys.s])
+ * chordSequence('copy', [Keys.CONTROL, Keys.c], { name: 'Copy' })
+ * chordSequence('screenshot', [Keys.CONTROL, Keys.SHIFT, Keys.s])
  */
 export function chordSequence(
   id: string,
@@ -132,9 +133,9 @@ export function chordSequence(
  * 
  * @example
  * holdSequences([
- *   { id: 'light-punch', key: 'j', duration: 200 },
- *   { id: 'medium-punch', key: 'j', duration: 500 },
- *   { id: 'heavy-punch', key: 'j', duration: 1000 }
+ *   { id: 'light-punch', key: Keys.j, duration: 200 },
+ *   { id: 'medium-punch', key: Keys.j, duration: 500 },
+ *   { id: 'heavy-punch', key: Keys.j, duration: 1000 }
  * ])
  */
 export function holdSequences(

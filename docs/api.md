@@ -1,5 +1,26 @@
 # API Reference
 
+## 🚨 Important: Key Naming
+
+Before using any APIs, understand how key names work to avoid common mistakes:
+
+```typescript
+// ❌ WRONG - These will NOT work
+holdSequence('jump', ' ', 500)           // Use 'Space' not ' '
+comboSequence('move', ['↓', '→', 'p'])   // Use 'ArrowDown', 'ArrowRight' not unicode
+isKeyPressed('ctrl')                      // Use 'Control' not 'ctrl'
+
+// ✅ CORRECT - These WILL work  
+import { Keys } from 'use-normalized-keys';
+holdSequence('jump', Keys.SPACE, 500)    // Type-safe with IntelliSense
+comboSequence('move', [Keys.ARROW_DOWN, Keys.ARROW_RIGHT, Keys.p])
+isKeyPressed(Keys.CONTROL)
+```
+
+**📋 [Complete Key Reference →](./key-reference.md)** - See all normalized key names
+
+---
+
 ## useNormalizedKeys
 
 The main hook for normalized keyboard input handling, providing comprehensive keyboard event processing with advanced features like sequence detection, tap/hold recognition, and cross-platform compatibility.
@@ -723,11 +744,14 @@ function comboSequence(
 #### Example
 
 ```tsx
-import { comboSequence } from 'use-normalized-keys';
+import { comboSequence, Keys, CommonSequences } from 'use-normalized-keys';
 
 const combos = [
   comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']),
-  comboSequence('hadouken', ['↓', '↘', '→', 'p'], { timeout: 500 })
+  // ✅ Use proper normalized key names, not unicode arrows
+  comboSequence('hadouken', ['ArrowDown', 'ArrowRight', 'p'], { timeout: 500 }),
+  // 💡 Or use pre-defined sequences for common moves
+  comboSequence('hadouken-alt', [...CommonSequences.HADOUKEN, Keys.p], { timeout: 500 })
 ];
 ```
 

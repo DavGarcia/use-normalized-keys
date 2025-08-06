@@ -820,3 +820,12 @@ export {
   type NormalizedKeysContextType,
   type NormalizedKeysProviderProps
 } from './context';
+
+// Export Key Constants for better DX
+export {
+  Keys,
+  CommonSequences,
+  isValidNormalizedKey,
+  getKeyDescription,
+  type NormalizedKeyValue
+} from './keyConstants';

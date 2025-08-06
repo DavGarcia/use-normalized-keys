@@ -25,7 +25,7 @@ function MyComponent() {
 ## Check if Specific Keys are Pressed
 
 ```tsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
 function GameControls() {
   const { isKeyPressed } = useNormalizedKeys();
@@ -33,10 +33,10 @@ function GameControls() {
   return (
     <div>
       <h3>Movement Controls</h3>
-      <div>W (forward): {isKeyPressed('w') ? '🟢' : '🔴'}</div>
-      <div>A (left): {isKeyPressed('a') ? '🟢' : '🔴'}</div>
-      <div>S (backward): {isKeyPressed('s') ? '🟢' : '🔴'}</div>
-      <div>D (right): {isKeyPressed('d') ? '🟢' : '🔴'}</div>
+      <div>W (forward): {isKeyPressed(Keys.W) ? '🟢' : '🔴'}</div>
+      <div>A (left): {isKeyPressed(Keys.A) ? '🟢' : '🔴'}</div>
+      <div>S (backward): {isKeyPressed(Keys.S) ? '🟢' : '🔴'}</div>
+      <div>D (right): {isKeyPressed(Keys.D) ? '🟢' : '🔴'}</div>
     </div>
   );
 }
@@ -64,7 +64,8 @@ The new unified approach uses a Context Provider and single hook for maximum sim
 import { 
   NormalizedKeysProvider, 
   useHoldSequence, 
-  holdSequence 
+  holdSequence,
+  Keys 
 } from 'use-normalized-keys';
 
 function ChargingAttack() {
@@ -102,7 +103,7 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-attack', 'Space', 1000) // Hold space for 1 second
+        holdSequence('charge-attack', Keys.SPACE, 1000) // Hold space for 1 second
       ]}
     >
       <ChargingAttack />
@@ -117,7 +118,8 @@ function App() {
 import { 
   NormalizedKeysProvider, 
   useHoldSequence, 
-  holdSequence 
+  holdSequence,
+  Keys 
 } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
@@ -151,8 +153,8 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', 'Space', 500),
-        holdSequence('power-attack', 'f', 1000)
+        holdSequence('charge-jump', Keys.SPACE, 500),
+        holdSequence('power-attack', Keys.F, 1000)
       ]}
     >
       <GameCharacter />
