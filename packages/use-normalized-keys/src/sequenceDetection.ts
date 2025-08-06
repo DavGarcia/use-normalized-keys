@@ -356,6 +356,27 @@ export function processSequenceEvent(
     if (state.chordStartTime === null) {
       state.chordStartTime = now;
       state.chordMatched = false; // Reset chord matched flag
+    } else {
+      // If we already have a chord started and this is a non-modifier key,
+      // reset the chord state to allow new chord detection
+      if (!event.isModifier) {
+        state.chordMatched = false; // Reset to allow new chord detection
+        // Keep only modifier keys in the potential chord and add this new key
+        const modifierEvents = state.potentialChord.filter(e => e.isModifier);
+        state.potentialChord = [...modifierEvents, event];
+        
+        // CRITICAL: Also update activeChordKeys to match the potentialChord
+        // activeChordKeys is used by checkChordMatches to determine what's currently pressed
+        state.activeChordKeys.clear();
+        modifierEvents.forEach(e => state.activeChordKeys.add(e.key));
+        state.activeChordKeys.add(event.key);
+        
+        state.chordStartTime = now;
+        if (options.debug) {
+          console.log('[sequenceDetection] Reset chord state for new non-modifier key:', event.key, 'kept modifiers:', modifierEvents.map(e => e.key), 'activeChordKeys:', Array.from(state.activeChordKeys));
+        }
+        
+      }
     }
 
     // Check for sequence matches
@@ -363,7 +384,7 @@ export function processSequenceEvent(
     matches.push(...sequenceMatches);
 
     // Check for chord matches after a timeout to allow all keys to be pressed
-    // Schedule chord check
+    // Use shorter timeout for fast typing detection
     if (state.activeChordKeys.size > 0) {
       setTimeout(() => {
         // Only check if we still have active chord keys
@@ -383,7 +404,7 @@ export function processSequenceEvent(
             }
           }
         }
-      }, options.chordTimeout);
+      }, 10); // Much shorter timeout - 10ms instead of 50ms
     }
   }
 
