@@ -81,12 +81,11 @@ export function useHoldSequence(sequenceId: string) {
       lastUpdateTime = currentTime;
       
       if (currentHold && !releaseAnimationRef.current) {
-        // Calculate target progress using direct timestamp calculations for smoothness
-        const elapsed = currentTime - currentHold.startTime;
-        const targetProgress = Math.min(100, (elapsed / currentHold.minHoldTime) * 100);
+        // Use the actual progress from Context (already smooth 60fps from main hook)
+        const targetProgress = currentHold.progressPercent;
         
-        // Smooth interpolation with easing for 60fps smoothness
-        const smoothingFactor = 0.12;
+        // Light smoothing for animation consistency, but trust the Context progress
+        const smoothingFactor = 0.3; // Higher factor = less smoothing, more responsive
         const currentProgress = progressRef.current + (targetProgress - progressRef.current) * smoothingFactor;
         progressRef.current = currentProgress;
         
@@ -211,8 +210,8 @@ export function useHoldSequence(sequenceId: string) {
 
   // Return comprehensive unified API surface
   return {
-    // Core progress data (from useHoldProgress functionality)
-    progress: animationState.progress,
+    // Core progress data (from useHoldProgress functionality) - use real progress from Context
+    progress: hold?.progressPercent || 0,
     isHolding: !!hold,
     isComplete: hold?.isComplete || false,
     elapsedTime: hold?.elapsedTime || 0,
