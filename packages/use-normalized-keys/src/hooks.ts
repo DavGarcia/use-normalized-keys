@@ -34,31 +34,11 @@ export function useHoldSequence(sequenceId: string) {
   
   const { currentHolds, sequences } = context;
   
-  // Unified animation state combining all visual properties
-  const [animationState, setAnimationState] = useState({
-    // Progress data
-    progress: 0,
-    
-    // Animation properties
-    scale: 1,
-    opacity: 0.3,
-    glow: 0,
-    shake: 0,
-    isAnimating: false,
-    isCharging: false,
-    isReady: false,
-  });
-  
   // Event tracking state for game logic
   const [eventHistory, setEventHistory] = useState<Array<{
     timestamp: number;
     type: 'started' | 'completed' | 'cancelled';
   }>>([]);
-  
-  // Animation frame management - optimized for single RAF loop
-  const animationFrameRef = useRef<number>();
-  const progressRef = useRef(0);
-  const releaseAnimationRef = useRef(false);
   
   // Previous state tracking for event detection
   const previousHoldRef = useRef<HoldProgress | undefined>();
@@ -71,97 +51,18 @@ export function useHoldSequence(sequenceId: string) {
   const lastMatch = matches[matches.length - 1];
   const lastMatchTime = lastMatch?.matchedAt || 0;
 
-  // Single optimized RAF animation loop for 60fps performance
-  useEffect(() => {
-    let lastUpdateTime = Date.now();
-    
-    const animate = () => {
-      const currentHold = currentHolds.get(sequenceId);
-      const currentTime = Date.now();
-      lastUpdateTime = currentTime;
-      
-      if (currentHold && !releaseAnimationRef.current) {
-        // Use the actual progress from Context (already smooth 60fps from main hook)
-        const currentProgress = currentHold.progressPercent;
-        progressRef.current = currentProgress;
-        
-        // Calculate all animation properties based on real progress (no additional smoothing)
-        const scale = 1 + (currentProgress / 100) * 0.3; // Grows up to 1.3x
-        const opacity = 0.3 + (currentProgress / 100) * 0.7; // Fades in to full opacity
-        const glow = currentProgress > 80 ? (currentProgress - 80) / 20 : 0; // Glow effect near completion
-        const shake = currentProgress > 90 ? Math.sin(currentTime * 0.03) * 2 : 0; // Shake when almost ready
-        
-        setAnimationState({
-          progress: currentProgress,
-          scale,
-          opacity,
-          glow,
-          shake,
-          isAnimating: true,
-          isCharging: true,
-          isReady: currentProgress > 90,
-        });
-        
-        if (!currentHold.isComplete) {
-          animationFrameRef.current = requestAnimationFrame(animate);
-        }
-      } else if (progressRef.current > 0.1) {
-        // Release animation - smooth transition back to idle state
-        releaseAnimationRef.current = true;
-        const decayFactor = 0.88;
-        const currentProgress = progressRef.current * decayFactor;
-        progressRef.current = currentProgress;
-        
-        // Quick fade out animation
-        const scale = 1 + (currentProgress / 100) * 0.1;
-        const opacity = 0.3 + (currentProgress / 100) * 0.2;
-        
-        setAnimationState({
-          progress: currentProgress,
-          scale,
-          opacity,
-          glow: 0,
-          shake: 0,
-          isAnimating: currentProgress > 1,
-          isCharging: false,
-          isReady: false,
-        });
-        
-        if (currentProgress > 0.1) {
-          animationFrameRef.current = requestAnimationFrame(animate);
-        } else {
-          releaseAnimationRef.current = false;
-        }
-      } else {
-        // Reset to idle state - animation complete
-        progressRef.current = 0;
-        releaseAnimationRef.current = false;
-        setAnimationState({
-          progress: 0,
-          scale: 1,
-          opacity: 0.3,
-          glow: 0,
-          shake: 0,
-          isAnimating: false,
-          isCharging: false,
-          isReady: false,
-        });
-      }
-    };
-
-    // Optimize: start animation only when needed
-    const shouldAnimate = hold || progressRef.current > 0.1;
-    if (shouldAnimate) {
-      lastUpdateTime = Date.now();
-      animationFrameRef.current = requestAnimationFrame(animate);
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [hold, currentHolds, sequenceId]);
+  // Calculate animation properties directly from current progress (no RAF needed)
+  const currentProgress = hold?.progressPercent || 0;
+  const currentTime = Date.now();
+  
+  // Animation properties calculated on each render (synchronized with Context updates)
+  const scale = 1 + (currentProgress / 100) * 0.3; // Grows up to 1.3x
+  const opacity = 0.3 + (currentProgress / 100) * 0.7; // Fades in to full opacity
+  const glow = currentProgress > 80 ? (currentProgress - 80) / 20 : 0; // Glow effect near completion
+  const shake = currentProgress > 90 ? Math.sin(currentTime * 0.03) * 2 : 0; // Shake when almost ready
+  const isCharging = !!hold && !hold.isComplete;
+  const isReady = currentProgress > 90;
+  const isAnimating = isCharging;
 
   // Track hold started/cancelled events for game logic
   useEffect(() => {
@@ -216,13 +117,13 @@ export function useHoldSequence(sequenceId: string) {
     minHoldTime: hold?.minHoldTime || 0,
     
     // Animation properties (from useHoldAnimation functionality)
-    scale: animationState.scale,
-    opacity: animationState.opacity,
-    glow: animationState.glow,
-    shake: animationState.shake,
-    isCharging: animationState.isCharging,
-    isReady: animationState.isReady,
-    isAnimating: animationState.isAnimating,
+    scale,
+    opacity,
+    glow,
+    shake,
+    isCharging,
+    isReady,
+    isAnimating,
     
     // Game event flags (from useSequence functionality)
     justStarted: lastEvent?.type === 'started' && timeSinceLastEvent < eventWindow,
