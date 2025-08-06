@@ -20,6 +20,7 @@
     "test:watch": "npm run test:watch --workspace=packages/use-normalized-keys",
     "test:coverage": "npm run test:coverage --workspace=packages/use-normalized-keys",
     "demo": "npm run dev:demo --workspace=packages/use-normalized-keys",
+    "game": "npm run dev:game --workspace=packages/use-normalized-keys",
     "dev": "npm run dev --workspace=packages/use-normalized-keys",
     "docs:dev": "npm run dev --workspace=docs",
     "docs:build": "npm run build --workspace=docs",

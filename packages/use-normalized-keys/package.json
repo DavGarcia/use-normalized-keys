@@ -21,8 +21,10 @@
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
     "build:demo": "vite build --config vite.demo.config.mjs",
+    "build:game": "vite build --config vite.game.config.mjs",
     "dev": "vite build --watch",
     "dev:demo": "vite --config vite.demo.config.mjs",
+    "dev:game": "vite --config vite.game.config.mjs",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",

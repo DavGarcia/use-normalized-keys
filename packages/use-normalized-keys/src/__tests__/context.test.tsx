@@ -74,21 +74,37 @@ describe('NormalizedKeysContext', () => {
       expect(screen.getByTestId('test-child')).toBeInTheDocument();
     });
 
-    it('should pass UseNormalizedKeysOptions to useNormalizedKeys', () => {
-      const options: UseNormalizedKeysOptions = {
-        debug: true,
-        tapHoldThreshold: 300,
-        excludeInputFields: false,
-        preventDefault: ['Ctrl+S', 'Ctrl+A'],
-      };
+    it('should pass provider props to useNormalizedKeys correctly', () => {
+      const sequences = [
+        { id: 'test', keys: ['Space'], type: 'hold' as const }
+      ];
+      const onSequenceMatch = vi.fn();
 
       render(
-        <NormalizedKeysProvider {...options}>
+        <NormalizedKeysProvider 
+          debug={true}
+          tapHoldThreshold={300}
+          excludeInputFields={false}
+          preventDefault={['Ctrl+S', 'Ctrl+A']}
+          sequences={sequences}
+          onSequenceMatch={onSequenceMatch}
+        >
           <div>Test</div>
         </NormalizedKeysProvider>
       );
 
-      expect(useNormalizedKeysModule.useNormalizedKeys).toHaveBeenCalledWith(options);
+      expect(useNormalizedKeysModule.useNormalizedKeys).toHaveBeenCalledWith({
+        debug: true,
+        tapHoldThreshold: 300,
+        excludeInputFields: false,
+        preventDefault: ['Ctrl+S', 'Ctrl+A'],
+        enabled: undefined,
+        sequences: {
+          sequences,
+          onSequenceMatch,
+          debug: true
+        }
+      });
     });
 
     it('should provide useNormalizedKeys state through context', () => {

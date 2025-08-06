@@ -97,11 +97,8 @@ export default function DemoApp() {
       debug={debugMode}
       tapHoldThreshold={200}
       preventDefault={preventDefault}
-      sequences={showSequences ? {
-        sequences,
-        onSequenceMatch: handleSequenceMatch,
-        debug: debugMode
-      } : undefined}
+      sequences={showSequences ? sequences : undefined}
+      onSequenceMatch={handleSequenceMatch}
     >
       <InteractiveDemo {...demoProps} />
     </NormalizedKeysProvider>

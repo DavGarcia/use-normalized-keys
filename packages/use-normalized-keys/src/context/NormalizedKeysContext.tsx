@@ -1,6 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { useNormalizedKeys } from '../index';
 import type { NormalizedKeyState, UseNormalizedKeysOptions } from '../index';
+import type { SequenceDefinition, MatchedSequence } from '../sequenceDetection';
 
 /**
  * Context type for sharing useNormalizedKeys state across component tree
@@ -25,14 +26,27 @@ export const NormalizedKeysContext = createContext<NormalizedKeysContextType | n
 /**
  * Props for the NormalizedKeysProvider component
  * 
- * Extends all UseNormalizedKeysOptions with additional children prop.
- * This allows the Provider to accept any configuration that the main hook accepts.
+ * Simplified API for the Provider component with clean, intuitive props.
  * 
  * @since 1.1.0
  */
-export interface NormalizedKeysProviderProps extends UseNormalizedKeysOptions {
+export interface NormalizedKeysProviderProps {
   /** React children to wrap with keyboard context */
   children: React.ReactNode;
+  /** Array of sequence definitions */
+  sequences?: SequenceDefinition[];
+  /** Callback when sequences are matched */
+  onSequenceMatch?: (match: MatchedSequence) => void;
+  /** Enable debug logging */
+  debug?: boolean;
+  /** Whether hook is enabled */
+  enabled?: boolean;
+  /** Exclude input fields from keyboard handling */
+  excludeInputFields?: boolean;
+  /** Threshold in ms for tap vs hold detection */
+  tapHoldThreshold?: number;
+  /** Prevent default for keys - true for all, array for specific combinations */
+  preventDefault?: boolean | string[];
 }
 
 /**
@@ -79,11 +93,31 @@ export interface NormalizedKeysProviderProps extends UseNormalizedKeysOptions {
  * @category Context Provider
  */
 export function NormalizedKeysProvider({ 
-  children, 
-  ...options 
+  children,
+  sequences,
+  onSequenceMatch,
+  debug,
+  enabled,
+  excludeInputFields,
+  tapHoldThreshold,
+  preventDefault
 }: NormalizedKeysProviderProps): JSX.Element {
-  // Create single instance of useNormalizedKeys with provided options
-  const normalizedKeysState = useNormalizedKeys(options);
+  // Convert clean props to useNormalizedKeys format
+  const sequenceOptions = sequences ? {
+    sequences,
+    ...(onSequenceMatch && { onSequenceMatch }),
+    ...(debug !== undefined && { debug })
+  } : undefined;
+
+  // Create single instance of useNormalizedKeys
+  const normalizedKeysState = useNormalizedKeys({
+    enabled,
+    debug,
+    excludeInputFields,
+    tapHoldThreshold,
+    preventDefault,
+    sequences: sequenceOptions
+  });
 
   return (
     <NormalizedKeysContext.Provider value={normalizedKeysState}>
