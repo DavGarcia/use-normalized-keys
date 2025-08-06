@@ -34,8 +34,10 @@ export default defineConfig({
       {
         text: 'Interactive',
         items: [
-          { text: 'Interactive Demo', link: '/demo' },
-          { text: 'Tools Demo', link: '/tools' }
+          { text: 'Demo Documentation', link: '/demo' },
+          { text: 'Tools Documentation', link: '/tools' },
+          { text: 'Live Demo', link: '/demo/', target: '_blank' },
+          { text: 'Live Tools', link: '/tools/', target: '_blank' }
         ]
       }
     ],
