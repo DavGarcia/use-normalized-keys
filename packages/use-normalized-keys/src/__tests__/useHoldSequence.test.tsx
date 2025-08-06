@@ -337,12 +337,8 @@ describe('useHoldSequence - Unified Hook', () => {
       vi.useRealTimers();
     });
 
-    it('should use requestAnimationFrame for smooth animations', () => {
-      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-        setTimeout(cb, 16); // 60fps
-        return 1;
-      });
-
+    it('should calculate animation properties from hold progress without RAF', () => {
+      // The unified hook no longer uses RAF - it calculates properties directly from Context data
       const mockHold = createMockHoldProgress('test-sequence', 25);
       const stateWithHold = {
         ...mockNormalizedKeyState,
@@ -351,44 +347,53 @@ describe('useHoldSequence - Unified Hook', () => {
       
       vi.mocked(useNormalizedKeysModule.useNormalizedKeys).mockReturnValue(stateWithHold);
 
-      renderHook(() => useHoldSequence('test-sequence'), {
+      const { result } = renderHook(() => useHoldSequence('test-sequence'), {
         wrapper: ({ children }) => (
           <NormalizedKeysProvider>{children}</NormalizedKeysProvider>
         ),
       });
 
-      // Should call requestAnimationFrame when hold is active
-      expect(requestAnimationFrameSpy).toHaveBeenCalled();
-      
-      requestAnimationFrameSpy.mockRestore();
+      // Should calculate animation properties directly from progress
+      expect(result.current.scale).toBe(1.075); // 1 + (25/100) * 0.3
+      expect(result.current.opacity).toBe(0.475); // 0.3 + (25/100) * 0.7
+      expect(result.current.isCharging).toBe(true);
     });
 
-    it('should properly cleanup animation frames when active', () => {
-      const cancelAnimationFrameSpy = vi.spyOn(window, 'cancelAnimationFrame');
-      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 1);
-
-      // Create a hold to trigger animation
-      const mockHold = createMockHoldProgress('test-sequence', 25);
-      const stateWithHold = {
+    it('should update animation properties when hold progress changes', () => {
+      // Test that animation properties update reactively with Context changes
+      const mockHold25 = createMockHoldProgress('test-sequence', 25);
+      const mockHold75 = createMockHoldProgress('test-sequence', 75);
+      
+      const stateWithHold25 = {
         ...mockNormalizedKeyState,
-        currentHolds: new Map([['test-sequence', mockHold]]),
+        currentHolds: new Map([['test-sequence', mockHold25]]),
       };
       
-      vi.mocked(useNormalizedKeysModule.useNormalizedKeys).mockReturnValue(stateWithHold);
+      const stateWithHold75 = {
+        ...mockNormalizedKeyState,
+        currentHolds: new Map([['test-sequence', mockHold75]]),
+      };
+      
+      const mockUseNormalizedKeys = vi.mocked(useNormalizedKeysModule.useNormalizedKeys);
+      mockUseNormalizedKeys.mockReturnValue(stateWithHold25);
 
-      const { unmount } = renderHook(() => useHoldSequence('test-sequence'), {
+      const { result, rerender } = renderHook(() => useHoldSequence('test-sequence'), {
         wrapper: ({ children }) => (
           <NormalizedKeysProvider>{children}</NormalizedKeysProvider>
         ),
       });
 
-      unmount();
-
-      // Should cancel animation frame on unmount when animation was active
-      expect(cancelAnimationFrameSpy).toHaveBeenCalled();
+      // Check initial 25% progress animation properties
+      expect(result.current.scale).toBe(1.075); // 1 + (25/100) * 0.3
+      expect(result.current.opacity).toBe(0.475); // 0.3 + (25/100) * 0.7
       
-      requestAnimationFrameSpy.mockRestore();
-      cancelAnimationFrameSpy.mockRestore();
+      // Update to 75% progress
+      mockUseNormalizedKeys.mockReturnValue(stateWithHold75);
+      rerender();
+      
+      // Check updated 75% progress animation properties
+      expect(result.current.scale).toBe(1.225); // 1 + (75/100) * 0.3
+      expect(result.current.opacity).toBe(0.825); // 0.3 + (75/100) * 0.7
     });
   });
 });

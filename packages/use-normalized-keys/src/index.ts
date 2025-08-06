@@ -659,18 +659,14 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     currentHoldsRef.current = currentHolds;
   }, [currentHolds]);
 
-  // Update hold progress values in real-time - optimized to run only with active holds
+  // Update hold progress values in real-time using RAF for smooth animations
   useEffect(() => {
-    let intervalId: number | null = null;
+    let animationFrameId: number | null = null;
     
     const updateHoldProgress = () => {
       const holds = currentHoldsRef.current;
       if (holds.size === 0) {
-        // No holds active, clear interval
-        if (intervalId !== null) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
+        // No holds active, stop animation loop
         return;
       }
       
@@ -704,16 +700,21 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
       if (hasChanges) {
         setCurrentHolds(updatedHolds);
       }
+      
+      // Continue animation loop if holds still exist
+      if (currentHoldsRef.current.size > 0) {
+        animationFrameId = requestAnimationFrame(updateHoldProgress);
+      }
     };
 
-    // Start interval only when holds exist
+    // Start RAF loop only when holds exist
     if (currentHoldsRef.current.size > 0) {
-      intervalId = setInterval(updateHoldProgress, 16) as any; // ~60fps
+      animationFrameId = requestAnimationFrame(updateHoldProgress);
     }
 
     return () => {
-      if (intervalId !== null) {
-        clearInterval(intervalId);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [currentHolds]); // Re-run when currentHolds changes

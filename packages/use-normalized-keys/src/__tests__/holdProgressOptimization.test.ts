@@ -2,45 +2,47 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useNormalizedKeys, holdSequence } from '../index';
 
-describe('Hold Progress Interval Optimization', () => {
-  let originalSetInterval: typeof setInterval;
-  let originalClearInterval: typeof clearInterval;
-  let setIntervalSpy: ReturnType<typeof vi.fn>;
-  let clearIntervalSpy: ReturnType<typeof vi.fn>;
-  let intervalCallCount = 0;
+describe('Hold Progress RAF Optimization', () => {
+  let originalRequestAnimationFrame: typeof requestAnimationFrame;
+  let originalCancelAnimationFrame: typeof cancelAnimationFrame;
+  let requestAnimationFrameSpy: ReturnType<typeof vi.fn>;
+  let cancelAnimationFrameSpy: ReturnType<typeof vi.fn>;
+  let frameCallCount = 0;
 
   beforeEach(() => {
-    originalSetInterval = global.setInterval;
-    originalClearInterval = global.clearInterval;
-    intervalCallCount = 0;
+    originalRequestAnimationFrame = global.requestAnimationFrame;
+    originalCancelAnimationFrame = global.cancelAnimationFrame;
+    frameCallCount = 0;
     
-    setIntervalSpy = vi.fn().mockImplementation(() => {
-      intervalCallCount++;
-      return intervalCallCount; // Return unique ID for each interval
+    requestAnimationFrameSpy = vi.fn().mockImplementation((callback) => {
+      frameCallCount++;
+      // Execute callback immediately for testing
+      setTimeout(callback, 0);
+      return frameCallCount; // Return unique ID for each RAF call
     });
-    clearIntervalSpy = vi.fn();
+    cancelAnimationFrameSpy = vi.fn();
     
-    global.setInterval = setIntervalSpy;
-    global.clearInterval = clearIntervalSpy;
+    global.requestAnimationFrame = requestAnimationFrameSpy;
+    global.cancelAnimationFrame = cancelAnimationFrameSpy;
   });
 
   afterEach(() => {
-    global.setInterval = originalSetInterval;
-    global.clearInterval = originalClearInterval;
+    global.requestAnimationFrame = originalRequestAnimationFrame;
+    global.cancelAnimationFrame = originalCancelAnimationFrame;
   });
 
-  it('should not run interval when no holds are active', () => {
+  it('should not run RAF when no holds are active', () => {
     const { result } = renderHook(() => useNormalizedKeys({
       sequences: { sequences: [] }
     }));
     
     expect(result.current.currentHolds.size).toBe(0);
     
-    // With optimization, setInterval should not be called when no holds are active
-    expect(setIntervalSpy).not.toHaveBeenCalled();
+    // With optimization, requestAnimationFrame should not be called when no holds are active
+    expect(requestAnimationFrameSpy).not.toHaveBeenCalled();
   });
 
-  it('should start interval when hold sequence is added and becomes active', () => {
+  it('should start RAF when hold sequence is added and becomes active', () => {
     const { result } = renderHook(() => useNormalizedKeys({
       sequences: { 
         sequences: [
@@ -51,7 +53,7 @@ describe('Hold Progress Interval Optimization', () => {
     
     // Initially no holds
     expect(result.current.currentHolds.size).toBe(0);
-    expect(setIntervalSpy).not.toHaveBeenCalled();
+    expect(requestAnimationFrameSpy).not.toHaveBeenCalled();
     
     // Simulate Space keydown to start hold sequence
     act(() => {
@@ -63,12 +65,12 @@ describe('Hold Progress Interval Optimization', () => {
       window.dispatchEvent(keydownEvent);
     });
 
-    // Now there should be an active hold and interval should start
+    // Now there should be an active hold and RAF should start
     expect(result.current.currentHolds.size).toBe(1);
-    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 16);
+    expect(requestAnimationFrameSpy).toHaveBeenCalledWith(expect.any(Function));
   });
 
-  it('should clear interval when hold sequence completes', async () => {
+  it('should stop RAF when hold sequence completes', async () => {
     const { result } = renderHook(() => useNormalizedKeys({
       sequences: { 
         sequences: [
@@ -88,7 +90,7 @@ describe('Hold Progress Interval Optimization', () => {
     });
 
     expect(result.current.currentHolds.size).toBe(1);
-    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 16);
+    expect(requestAnimationFrameSpy).toHaveBeenCalledWith(expect.any(Function));
     
     // Wait for hold to complete and then release key
     await new Promise(resolve => setTimeout(resolve, 150));
@@ -102,11 +104,12 @@ describe('Hold Progress Interval Optimization', () => {
       window.dispatchEvent(keyupEvent);
     });
 
-    // Hold should be complete/removed and interval cleared
-    expect(clearIntervalSpy).toHaveBeenCalled();
+    // Hold should be complete/removed and RAF loop should stop naturally (no cancelAnimationFrame needed if no more holds)
+    // The RAF loop stops itself when currentHolds.size becomes 0
+    expect(result.current.currentHolds.size).toBe(0);
   });
 
-  it('should manage interval correctly with multiple holds', async () => {
+  it('should manage RAF correctly with multiple holds', async () => {
     const { result } = renderHook(() => useNormalizedKeys({
       sequences: { 
         sequences: [
@@ -127,7 +130,7 @@ describe('Hold Progress Interval Optimization', () => {
     });
 
     expect(result.current.currentHolds.size).toBe(1);
-    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(requestAnimationFrameSpy).toHaveBeenCalledWith(expect.any(Function));
     
     // Start second hold
     act(() => {
@@ -140,9 +143,9 @@ describe('Hold Progress Interval Optimization', () => {
     });
 
     expect(result.current.currentHolds.size).toBe(2);
-    // Each change to currentHolds triggers a new useEffect, so we may have more than 1 call
-    // The important thing is that setInterval was called (optimization is working)
-    expect(setIntervalSpy).toHaveBeenCalled();
+    // Each change to currentHolds triggers a new useEffect, so we may have more RAF calls
+    // The important thing is that RAF was called (optimization is working)
+    expect(requestAnimationFrameSpy).toHaveBeenCalled();
     
     // Release first key
     act(() => {
@@ -154,10 +157,10 @@ describe('Hold Progress Interval Optimization', () => {
       window.dispatchEvent(keyupEvent);
     });
 
-    // Should still have one hold active, interval should continue
+    // Should still have one hold active, RAF should continue
     expect(result.current.currentHolds.size).toBe(1);
-    // clearInterval may be called as the useEffect re-runs when currentHolds changes
-    // The key point is that a new interval is started when holds still exist
+    // cancelAnimationFrame may be called as the useEffect re-runs when currentHolds changes
+    // The key point is that a new RAF loop is started when holds still exist
     
     // Release second key
     act(() => {
@@ -169,7 +172,7 @@ describe('Hold Progress Interval Optimization', () => {
       window.dispatchEvent(keyupEvent);
     });
 
-    // Now all holds are complete, interval should be cleared
-    expect(clearIntervalSpy).toHaveBeenCalled();
+    // Now all holds are complete, RAF loop should stop naturally
+    expect(result.current.currentHolds.size).toBe(0);
   });
 });
