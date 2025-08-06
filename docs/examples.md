@@ -2,7 +2,273 @@
 
 Collection of practical examples showing how to use useNormalizedKeys in various scenarios with all the latest features.
 
-## Basic Key Detection with Rich Event Data
+## NEW: Unified Hook API with 60fps Animations
+
+The following examples showcase the new unified `useHoldSequence` hook with Context Provider for maximum simplicity and smooth 60fps animations.
+
+### Power Attack with Smooth Visual Effects
+
+```tsx
+import { 
+  NormalizedKeysProvider, 
+  useHoldSequence, 
+  holdSequence 
+} from 'use-normalized-keys';
+import { useEffect } from 'react';
+
+function PowerAttackExample() {
+  const powerAttack = useHoldSequence('power-attack');
+  
+  // Trigger game actions
+  useEffect(() => {
+    if (powerAttack.justStarted) {
+      console.log('Start charging power attack!');
+    }
+    if (powerAttack.justCompleted) {
+      console.log('Execute devastating power attack!');
+    }
+    if (powerAttack.justCancelled) {
+      console.log('Power attack cancelled');
+    }
+  }, [powerAttack.justStarted, powerAttack.justCompleted, powerAttack.justCancelled]);
+  
+  return (
+    <div 
+      className="power-attack-button"
+      style={{
+        transform: `scale(${powerAttack.scale})`,
+        opacity: powerAttack.opacity,
+        boxShadow: powerAttack.glow > 0 ? `0 0 ${powerAttack.glow * 30}px #ff6b35` : 'none',
+        marginLeft: `${powerAttack.shake}px`,
+        padding: '20px',
+        borderRadius: '10px',
+        background: powerAttack.isReady ? '#ff6b35' : '#333',
+        color: 'white',
+        transition: 'background-color 0.3s'
+      }}
+    >
+      <h3>Power Attack (Hold F)</h3>
+      <div 
+        className="progress-bar"
+        style={{
+          width: '200px',
+          height: '20px',
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          borderRadius: '10px',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{
+          width: `${powerAttack.progress}%`,
+          height: '100%',
+          background: `linear-gradient(90deg, #4CAF50 0%, #ff6b35 100%)`,
+          transition: 'none' // RAF handles animations!
+        }} />
+      </div>
+      <div>Progress: {Math.round(powerAttack.progress)}%</div>
+      <div>Remaining: {powerAttack.remainingTime}ms</div>
+      {powerAttack.isReady && <div className="ready-indicator">⚡ READY TO UNLEASH!</div>}
+      {powerAttack.isCharging && <div>⚡ Building power...</div>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' })
+      ]}
+      preventDefault={['F5', 'Tab']} // Prevent specific browser shortcuts
+    >
+      <PowerAttackExample />
+    </NormalizedKeysProvider>
+  );
+}
+```
+
+### Multi-Ability Game Character
+
+```tsx
+import { 
+  NormalizedKeysProvider, 
+  useHoldSequence, 
+  holdSequence 
+} from 'use-normalized-keys';
+import { useEffect, useState } from 'react';
+
+function GameCharacter() {
+  const [abilities, setAbilities] = useState<string[]>([]);
+  
+  const chargeJump = useHoldSequence('charge-jump');
+  const powerAttack = useHoldSequence('power-attack');
+  const shield = useHoldSequence('shield');
+  const heal = useHoldSequence('heal');
+  
+  // Trigger abilities when completed
+  useEffect(() => {
+    if (chargeJump.justCompleted) {
+      setAbilities(prev => [...prev, `🦘 Super Jump executed!`]);
+    }
+    if (powerAttack.justCompleted) {
+      setAbilities(prev => [...prev, `⚔️ Power Attack unleashed!`]);
+    }
+    if (shield.justCompleted) {
+      setAbilities(prev => [...prev, `🛡️ Shield activated for ${shield.elapsedTime}ms`]);
+    }
+    if (heal.justCompleted) {
+      setAbilities(prev => [...prev, `❤️ Healing spell cast!`]);
+    }
+  }, [
+    chargeJump.justCompleted, 
+    powerAttack.justCompleted, 
+    shield.justCompleted, 
+    heal.justCompleted
+  ]);
+  
+  return (
+    <div className="character-panel">
+      <h2>🧙‍♂️ Game Character Abilities</h2>
+      
+      <div className="abilities-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>        
+        <div className="ability" style={{ 
+          padding: '15px', 
+          border: '2px solid #ddd', 
+          borderRadius: '10px',
+          transform: `scale(${chargeJump.scale})`,
+          opacity: chargeJump.opacity 
+        }}>
+          <h3>🦘 Charge Jump (Space)</h3>
+          <div className="progress-bar" style={{ 
+            width: '100%', 
+            height: '15px', 
+            backgroundColor: '#eee', 
+            borderRadius: '7px' 
+          }}>
+            <div style={{
+              width: `${chargeJump.progress}%`,
+              height: '100%',
+              backgroundColor: '#4CAF50',
+              borderRadius: '7px'
+            }} />
+          </div>
+          <div>{Math.round(chargeJump.progress)}% - {chargeJump.remainingTime}ms</div>
+          {chargeJump.isReady && <div>READY!</div>}
+        </div>
+        
+        <div className="ability" style={{ 
+          padding: '15px', 
+          border: '2px solid #ddd', 
+          borderRadius: '10px',
+          transform: `scale(${powerAttack.scale})`,
+          opacity: powerAttack.opacity,
+          marginLeft: `${powerAttack.shake}px`
+        }}>
+          <h3>⚔️ Power Attack (F)</h3>
+          <div className="progress-bar" style={{ 
+            width: '100%', 
+            height: '15px', 
+            backgroundColor: '#eee', 
+            borderRadius: '7px' 
+          }}>
+            <div style={{
+              width: `${powerAttack.progress}%`,
+              height: '100%',
+              backgroundColor: '#ff6b35',
+              borderRadius: '7px'
+            }} />
+          </div>
+          <div>{Math.round(powerAttack.progress)}% - {powerAttack.remainingTime}ms</div>
+          {powerAttack.isReady && <div>⚡ READY!</div>}
+        </div>
+        
+        <div className="ability" style={{ 
+          padding: '15px', 
+          border: '2px solid #ddd', 
+          borderRadius: '10px',
+          transform: `scale(${shield.scale})`,
+          opacity: shield.opacity 
+        }}>
+          <h3>🛡️ Shield (S)</h3>
+          <div className="progress-bar" style={{ 
+            width: '100%', 
+            height: '15px', 
+            backgroundColor: '#eee', 
+            borderRadius: '7px' 
+          }}>
+            <div style={{
+              width: `${shield.progress}%`,
+              height: '100%',
+              backgroundColor: '#2196F3',
+              borderRadius: '7px'
+            }} />
+          </div>
+          <div>{shield.isHolding ? 'ACTIVE' : 'Ready'} - {shield.elapsedTime}ms</div>
+        </div>
+        
+        <div className="ability" style={{ 
+          padding: '15px', 
+          border: '2px solid #ddd', 
+          borderRadius: '10px',
+          transform: `scale(${heal.scale})`,
+          opacity: heal.opacity 
+        }}>
+          <h3>❤️ Heal (H)</h3>
+          <div className="progress-bar" style={{ 
+            width: '100%', 
+            height: '15px', 
+            backgroundColor: '#eee', 
+            borderRadius: '7px' 
+          }}>
+            <div style={{
+              width: `${heal.progress}%`,
+              height: '100%',
+              backgroundColor: '#E91E63',
+              borderRadius: '7px'
+            }} />
+          </div>
+          <div>{Math.round(heal.progress)}% - {heal.remainingTime}ms</div>
+          {heal.isReady && <div>✨ READY!</div>}
+        </div>
+      </div>
+      
+      <div className="ability-log" style={{ marginTop: '20px' }}>
+        <h3>Ability Log:</h3>
+        <div style={{ maxHeight: '150px', overflowY: 'auto', padding: '10px', backgroundColor: '#f5f5f5' }}>
+          {abilities.slice(-5).map((ability, i) => (
+            <div key={i}>{ability}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
+        holdSequence('power-attack', 'f', 1200, { name: 'Power Attack' }),
+        holdSequence('shield', 's', 500, { name: 'Shield' }),
+        holdSequence('heal', 'h', 2000, { name: 'Heal' })
+      ]}
+      debug={false}
+      tapHoldThreshold={150}
+    >
+      <GameCharacter />
+    </NormalizedKeysProvider>
+  );
+}
+```
+
+---
+
+## Legacy Examples (Pre-Unified API)
+
+The following examples show the previous API approach. While still supported, we recommend using the new unified approach above.
+
+### Basic Key Detection with Rich Event Data
 
 ```tsx
 import { useNormalizedKeys } from 'use-normalized-keys';

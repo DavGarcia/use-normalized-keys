@@ -8,14 +8,16 @@ useNormalizedKeys is a comprehensive React hook that provides consistent, featur
 
 ## Key Features
 
+- **⚡ Unified Hook API** - Single `useHoldSequence` hook with comprehensive functionality
+- **🚀 60fps Animations** - RequestAnimationFrame for perfectly smooth visual effects
+- **🔄 Context Provider** - Simplified setup with automatic state management
 - **🌐 Cross-platform compatibility** - Handles Windows Shift+Numpad phantom events, macOS Meta key issues, and other platform-specific quirks
-- **⚡ Real-time performance** - Optimized for high-frequency input scenarios with minimal overhead
+- **🎮 Real-time performance** - Optimized for high-frequency input scenarios with minimal overhead
 - **🎹 Sequence detection** - Detect complex key sequences (Konami code, shortcuts, etc.) and chord combinations
 - **⏱️ Tap vs Hold detection** - Distinguish between quick taps and long holds with configurable thresholds
 - **🚫 preventDefault API** - Prevent browser shortcuts for specific keys or all keys
 - **🔤 Key normalization** - Consistent key names across different browsers and layouts
 - **📊 Rich event data** - Detailed information about timing, modifiers, numpad state, and more
-- **🎮 Gaming optimized** - Perfect for games with features like focus loss recovery and input field exclusion
 - **📝 TypeScript support** - Full type definitions with comprehensive IntelliSense
 - **🔧 Zero configuration** - Works out of the box with sensible defaults
 
@@ -73,25 +75,44 @@ function GameComponent() {
 }
 ```
 
-## Simplified API
+## New Unified API
 
-For common use cases, we provide helper hooks that make implementation even easier:
+The new unified approach uses a Context Provider and single hook for maximum simplicity:
 
 ```tsx
-import { useNormalizedKeys, useHoldProgress, holdSequence } from 'use-normalized-keys';
+import { 
+  NormalizedKeysProvider, 
+  useHoldSequence, 
+  holdSequence 
+} from 'use-normalized-keys';
 
 function PowerAttack() {
-  // Main hook must be called to establish keyboard handling
-  const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [holdSequence('power-attack', 'q', 1000)]
-    }
-  });
+  // Single unified hook with all functionality
+  const powerAttack = useHoldSequence('power-attack');
   
-  // Helper hook tracks the specific sequence progress
-  const { progress, isComplete } = useHoldProgress('power-attack');
-  
-  return <div>Power Attack: {isComplete ? 'READY!' : `${Math.round(progress)}%`}</div>;
+  return (
+    <div style={{
+      transform: `scale(${powerAttack.scale})`,
+      opacity: powerAttack.opacity,
+      boxShadow: powerAttack.glow > 0 ? `0 0 ${powerAttack.glow * 20}px #ff6b35` : 'none'
+    }}>
+      <div>Progress: {Math.round(powerAttack.progress)}%</div>
+      <div>Time: {powerAttack.remainingTime}ms remaining</div>
+      {powerAttack.isReady && <div className="ready">READY!</div>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('power-attack', 'q', 1000, { name: 'Power Attack' })
+      ]}
+    >
+      <PowerAttack />
+    </NormalizedKeysProvider>
+  );
 }
 ```
 

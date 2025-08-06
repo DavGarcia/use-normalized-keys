@@ -217,20 +217,52 @@ function shouldPreventDefault(
 }
 
 /**
- * A React hook for normalized keyboard input handling
- * Optimized for games and interactive applications with professional-grade features
+ * A React hook for normalized keyboard input handling with 60fps RAF animations
  * 
- * Features:
- * - Global keyboard event capturing with capture phase
- * - Automatic input field detection and exclusion
- * - Cross-browser key normalization
- * - Platform-specific quirk handling
- * - Focus loss recovery and stuck key prevention
- * - Advanced modifier key management with tap-vs-hold detection
- * - High-performance state tracking with debounced repeat handling
+ * **Professional-grade keyboard input handling** optimized for games and interactive applications.
+ * Now with requestAnimationFrame-based hold progress updates for perfectly smooth 60fps animations.
  * 
- * @param options Configuration options for the hook
+ * **Key Features:**
+ * - 🚀 **60fps RAF Animations**: Smooth hold progress updates using requestAnimationFrame
+ * - 🌐 **Cross-Platform**: Handles Windows Shift+Numpad phantom events, macOS Meta key issues
+ * - ⚡ **High Performance**: Optimized state tracking with minimal re-renders and efficient updates
+ * - 🎹 **Sequence Detection**: Detect key sequences (Konami code), chords (Ctrl+S), and hold patterns
+ * - ⏱️ **Tap vs Hold**: Distinguish between quick taps and long holds with configurable thresholds
+ * - 🚫 **preventDefault API**: Block browser shortcuts selectively or globally
+ * - 🔤 **Key Normalization**: Consistent key names across browsers and keyboard layouts
+ * - 🎮 **Gaming Features**: Focus loss recovery, input field exclusion, stuck key prevention
+ * - 📝 **TypeScript Ready**: Full type definitions with comprehensive IntelliSense
+ * 
+ * **NEW in v1.1.0**: RAF-based animation system eliminates stuttering and timing conflicts
+ * for perfectly smooth visual effects. Use with the unified `useHoldSequence` hook for
+ * the best development experience.
+ * 
+ * **Recommended Usage:**
+ * ```tsx
+ * // New unified approach (recommended)
+ * import { NormalizedKeysProvider, useHoldSequence, holdSequence } from 'use-normalized-keys';
+ * 
+ * function App() {
+ *   return (
+ *     <NormalizedKeysProvider sequences={[holdSequence('power', 'f', 1000)]}>
+ *       <GameComponent />
+ *     </NormalizedKeysProvider>
+ *   );
+ * }
+ * 
+ * // Or direct usage (advanced)
+ * const keys = useNormalizedKeys({
+ *   sequences: { sequences: [holdSequence('power', 'f', 1000)] },
+ *   preventDefault: true
+ * });
+ * ```
+ * 
+ * @param options - Configuration options for the hook
  * @returns Object containing normalized keyboard state and utilities
+ * 
+ * @version 1.1.0
+ * @since 1.0.0
+ * @category Main Hooks
  */
 export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): NormalizedKeyState {
   const { 

@@ -54,31 +54,30 @@ const { lastEvent, pressedKeys, isKeyPressed } = useNormalizedKeys({
 });
 ```
 
-## Simplified API
+## Unified API with Context Provider
 
-For common use cases, we provide helper hooks and functions:
+The new unified approach uses a Context Provider and single hook for maximum simplicity:
 
-### Hold Progress Tracking
+### Hold Progress Tracking with Smooth Animations
 
 ```tsx
-import { useNormalizedKeys, useHoldProgress, holdSequence } from 'use-normalized-keys';
+import { 
+  NormalizedKeysProvider, 
+  useHoldSequence, 
+  holdSequence 
+} from 'use-normalized-keys';
 
 function ChargingAttack() {
-  // First initialize the main hook with sequences
-  const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [
-        holdSequence('charge-attack', ' ', 1000) // Hold space for 1 second
-      ]
-    }
-  });
-  
-  // Then use helper hook to track specific sequence
-  const { progress, isHolding } = useHoldProgress('charge-attack');
+  // Single unified hook with all functionality
+  const charge = useHoldSequence('charge-attack');
   
   return (
-    <div>
-      <div>Charging: {isHolding ? `${Math.round(progress)}%` : 'Ready'}</div>
+    <div style={{
+      transform: `scale(${charge.scale})`,
+      opacity: charge.opacity,
+      boxShadow: charge.glow > 0 ? `0 0 ${charge.glow * 20}px #4CAF50` : 'none'
+    }}>
+      <div>Charging: {charge.isHolding ? `${Math.round(charge.progress)}%` : 'Ready'}</div>
       <div style={{
         width: '200px',
         height: '20px',
@@ -86,36 +85,80 @@ function ChargingAttack() {
         borderRadius: '10px'
       }}>
         <div style={{
-          width: `${progress}%`,
+          width: `${charge.progress}%`,
           height: '100%',
           background: '#4CAF50',
           borderRadius: '10px',
-          transition: 'none'
+          transition: 'none' // No CSS transitions needed - 60fps RAF animations!
         }}/>
       </div>
+      {charge.isReady && <div className="ready">READY!</div>}
+      <div>Time remaining: {charge.remainingTime}ms</div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('charge-attack', 'Space', 1000) // Hold space for 1 second
+      ]}
+    >
+      <ChargingAttack />
+    </NormalizedKeysProvider>
   );
 }
 ```
 
-### Combo Detection
+### Game Character with Multiple Hold Sequences
 
 ```tsx
-import { useNormalizedKeys, comboSequence } from 'use-normalized-keys';
+import { 
+  NormalizedKeysProvider, 
+  useHoldSequence, 
+  holdSequence 
+} from 'use-normalized-keys';
+import { useEffect } from 'react';
 
-const { sequences } = useNormalizedKeys({
-  sequences: {
-    sequences: [
-      comboSequence('konami', ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'], {
-        name: 'Konami Code',
-        timeout: 2000
-      })
-    ],
-    onSequenceMatch: (match) => {
-      console.log(`Matched: ${match.sequenceName}`);
+function GameCharacter() {
+  const jump = useHoldSequence('charge-jump');
+  const attack = useHoldSequence('power-attack');
+  
+  // Trigger actions on sequence events
+  useEffect(() => {
+    if (jump.justCompleted) {
+      console.log('Execute charge jump!');
     }
-  }
-});
+    if (attack.justStarted) {
+      console.log('Start charging power attack...');
+    }
+    if (attack.justCompleted) {
+      console.log('Execute power attack!');
+    }
+  }, [jump.justCompleted, attack.justStarted, attack.justCompleted]);
+  
+  return (
+    <div className="character">
+      <div>Charge Jump (Space): {Math.round(jump.progress)}%</div>
+      <div>Power Attack (F): {Math.round(attack.progress)}%</div>
+      {attack.isReady && <div>Power Attack READY!</div>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('charge-jump', 'Space', 500),
+        holdSequence('power-attack', 'f', 1000)
+      ]}
+    >
+      <GameCharacter />
+    </NormalizedKeysProvider>
+  );
+}
 ```
 
 ## What's Next?

@@ -1,7 +1,7 @@
 {
   "name": "use-normalized-keys",
-  "version": "1.0.0",
-  "description": "A React hook for normalized keyboard input handling optimized for games and interactive applications",
+  "version": "1.1.0",
+  "description": "A React hook with unified API and 60fps animations for normalized keyboard input handling, optimized for games and interactive applications",
   "main": "dist/index.umd.js",
   "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
@@ -15,7 +15,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly",
@@ -39,7 +40,13 @@
     "gaming",
     "interactive",
     "normalization",
-    "cross-browser"
+    "cross-browser",
+    "unified-api",
+    "60fps",
+    "animations",
+    "requestanimationframe",
+    "context-provider",
+    "smooth-animations"
   ],
   "author": "David Garcia <dgarcia182@gmail.com>",
   "license": "MIT",

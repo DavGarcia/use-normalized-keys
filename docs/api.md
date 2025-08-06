@@ -395,176 +395,105 @@ const keys = useNormalizedKeys({ enabled: gameActive });
 // Hook will not respond to keyboard events when gameActive is false
 ```
 
-## Helper Hooks
+## Context Provider API
 
-**Important:** All helper hooks (`useHoldProgress`, `useHoldAnimation`, `useSequence`) must be used within components that also call `useNormalizedKeys`. These hooks read from the context established by the main hook and will not function independently.
+### NormalizedKeysProvider
 
-### useHoldProgress
-
-Hook for tracking hold progress of a specific sequence with smooth animated progress values.
+The Context Provider simplifies setup and provides automatic state management for the unified hook architecture.
 
 #### Signature
 
 ```typescript
-function useHoldProgress(sequenceId: string): HoldProgressResult
+function NormalizedKeysProvider(props: NormalizedKeysProviderProps): JSX.Element
 ```
 
-#### Parameters
-
-- `sequenceId`: `string` - The ID of the hold sequence to track
-
-#### Return Type
+#### Props
 
 ```typescript
-interface HoldProgressResult {
-  progress: number;        // Smooth progress value (0-100)
-  isHolding: boolean;      // Whether currently holding
-  isComplete: boolean;     // Whether hold is complete
-  elapsedTime: number;     // Time elapsed in ms
-  remainingTime: number;   // Time remaining in ms
-  startTime: number | null; // When hold started
-  minHoldTime: number;     // Required hold duration
+interface NormalizedKeysProviderProps {
+  children: React.ReactNode;
+  sequences?: SequenceDefinition[];     // Array of sequence definitions
+  debug?: boolean;                      // Enable debug logging
+  tapHoldThreshold?: number;            // Tap vs hold threshold in ms
+  excludeInputFields?: boolean;         // Ignore input field events
+  preventDefault?: boolean | string[];  // Prevent default behavior
 }
 ```
 
 #### Example
 
 ```tsx
-import { useNormalizedKeys, useHoldProgress } from 'use-normalized-keys';
+import { NormalizedKeysProvider, holdSequence } from 'use-normalized-keys';
 
-function ChargeJumpButton() {
-  // Main hook must be called first
-  const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [
-        { id: 'charge-jump', keys: [{ key: 'Space', minHoldTime: 1000 }], type: 'hold' }
-      ]
-    }
-  });
-  
-  // Helper hook reads from the main hook's state
-  const progress = useHoldProgress('charge-jump');
-  
+function App() {
   return (
-    <div className="charge-button">
-      <div 
-        className="progress-bar"
-        style={{ width: `${progress.progress}%` }}
-      />
-      <span>
-        {progress.isHolding ? `Charging... ${progress.remainingTime}ms` : 'Hold Space to Charge'}
-      </span>
-    </div>
-  );
-}
-```
-
-### useHoldAnimation
-
-Hook for animated hold progress with visual effects like scale, opacity, glow, and shake.
-
-#### Signature
-
-```typescript
-function useHoldAnimation(sequenceId: string): HoldAnimationResult
-```
-
-#### Parameters
-
-- `sequenceId`: `string` - The ID of the hold sequence to track
-
-#### Return Type
-
-```typescript
-interface HoldAnimationResult {
-  progress: number;        // Animated progress (0-100)
-  scale: number;          // Scale multiplier (1.0-1.3)
-  opacity: number;        // Opacity value (0.3-1.0)
-  glow: number;          // Glow intensity (0-1)
-  shake: number;         // Shake offset in pixels
-  isAnimating: boolean;   // Whether animation is active
-  isCharging: boolean;    // Whether currently charging
-  isReady: boolean;       // Whether at 90%+ progress
-}
-```
-
-#### Example
-
-```tsx
-import { useNormalizedKeys, useHoldAnimation } from 'use-normalized-keys';
-
-function AnimatedChargeButton() {
-  const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [
-        { id: 'power-move', keys: [{ key: 'f', minHoldTime: 750 }], type: 'hold' }
-      ]
-    }
-  });
-  
-  const animation = useHoldAnimation('power-move');
-  
-  return (
-    <div 
-      className="power-button"
-      style={{
-        transform: `scale(${animation.scale}) translateX(${animation.shake}px)`,
-        opacity: animation.opacity,
-        boxShadow: animation.glow > 0 ? `0 0 ${animation.glow * 20}px #ff6b35` : 'none'
-      }}
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('power-attack', 'f', 1000),
+        holdSequence('shield', 's', 500)
+      ]}
+      debug={true}
+      tapHoldThreshold={200}
+      preventDefault={['Tab', 'F5']}
     >
-      <div 
-        className="charge-fill"
-        style={{ width: `${animation.progress}%` }}
-      />
-      {animation.isReady && <span className="ready-indicator">READY!</span>}
-      {animation.isCharging && <span>Charging Power Move...</span>}
-    </div>
+      <GameComponent />
+    </NormalizedKeysProvider>
   );
 }
 ```
 
-### useSequence
+## Unified Helper Hook
 
-Game-oriented hook for tracking sequence state with event detection flags.
+### useHoldSequence
+
+**NEW!** ⚡ The all-in-one unified hook that combines progress tracking, smooth 60fps animations, and game events into a single optimized hook. Replaces the need for separate `useHoldProgress`, `useHoldAnimation`, and `useSequence` hooks.
 
 #### Signature
 
 ```typescript
-function useSequence(sequenceId: string): SequenceResult
+function useHoldSequence(sequenceId: string): UseHoldSequenceResult
 ```
 
 #### Parameters
 
-- `sequenceId`: `string` - The ID of the sequence to track
+- `sequenceId`: `string` - The ID of the hold sequence to track
 
 #### Return Type
 
 ```typescript
-interface SequenceResult {
-  // Current state
-  isHolding: boolean;      // Currently holding
-  isComplete: boolean;     // Sequence complete
-  progress: number;        // Progress percentage (0-100)
+interface UseHoldSequenceResult {
+  // Core Progress Data (from useHoldProgress functionality)
+  progress: number;              // Real-time progress (0-100)
+  isHolding: boolean;           // Currently holding key
+  isComplete: boolean;          // Hold completed
+  elapsedTime: number;          // Time elapsed in ms
+  remainingTime: number;        // Time remaining in ms
+  startTime: number | null;     // When hold started
+  minHoldTime: number;          // Required hold duration
   
-  // Event flags (100ms window)
-  justStarted: boolean;    // Just started
-  justCompleted: boolean;  // Just completed
-  justCancelled: boolean;  // Just cancelled
+  // Animation Properties (from useHoldAnimation functionality)
+  scale: number;                // Scale multiplier (1.0-1.3)
+  opacity: number;              // Opacity value (0.3-1.0) 
+  glow: number;                 // Glow intensity (0-1)
+  shake: number;                // Shake offset in pixels
+  isCharging: boolean;          // Currently charging
+  isReady: boolean;             // At 90%+ progress
+  isAnimating: boolean;         // Animation active
   
-  // Timing information
-  startTime: number | null; // When started
-  elapsedTime: number;     // Time elapsed in ms
-  remainingTime: number;   // Time remaining in ms
-  minHoldTime: number;     // Required duration
-  timeSinceStart: number | null; // Current time - start time
+  // Game Event Flags (from useSequence functionality) 
+  justStarted: boolean;         // Just started (100ms window)
+  justCompleted: boolean;       // Just completed (100ms window)
+  justCancelled: boolean;       // Just cancelled (100ms window)
+  
+  // Extended Timing Information
+  timeSinceStart: number | null;   // Time since hold started
   timeSinceLastEvent: number | null; // Time since last event
   
-  // Match information
-  lastMatch: MatchedSequence | null; // Last sequence match
-  matchCount: number;      // Total matches for this sequence
+  // Match Information
+  lastMatch: MatchedSequence | undefined; // Last sequence match
+  matchCount: number;                     // Total matches
   
-  // Event history
+  // Event History for Advanced Use Cases
   eventHistory: Array<{
     timestamp: number;
     type: 'started' | 'completed' | 'cancelled';
@@ -572,46 +501,133 @@ interface SequenceResult {
 }
 ```
 
+#### Key Benefits
+
+- **🚀 60fps Animations**: Uses requestAnimationFrame for perfectly smooth visual effects
+- **⚡ Single Hook**: Replaces useHoldProgress + useHoldAnimation + useSequence
+- **🎯 Real-time Properties**: Progress, timing, animation values, and event flags
+- **🎮 Game-Optimized**: Built for responsive game mechanics
+- **📊 Complete API**: Everything you need in one optimized hook
+
 #### Example
 
 ```tsx
-import { useNormalizedKeys, useSequence } from 'use-normalized-keys';
+import { 
+  NormalizedKeysProvider, 
+  useHoldSequence, 
+  holdSequence 
+} from 'use-normalized-keys';
 import { useEffect } from 'react';
 
-function GameCharacter() {
-  const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [
-        { id: 'combo-attack', keys: ['a', 's', 'd'], type: 'sequence' },
-        { id: 'special-move', keys: [{ key: 'f', minHoldTime: 500 }], type: 'hold' }
-      ]
-    }
-  });
-  
-  const combo = useSequence('combo-attack');
-  const special = useSequence('special-move');
+function PowerAttackButton() {
+  const powerAttack = useHoldSequence('power-attack');
   
   // Trigger actions on sequence events
   useEffect(() => {
-    if (combo.justCompleted) {
-      executeComboAttack();
-    }
-    if (special.justStarted) {
+    if (powerAttack.justStarted) {
       showChargingEffect();
     }
-    if (special.justCompleted) {
-      executeSpecialMove();
+    if (powerAttack.justCompleted) {
+      executePowerAttack();
     }
-    if (special.justCancelled) {
+    if (powerAttack.justCancelled) {
       hideChargingEffect();
     }
-  }, [combo.justCompleted, special.justStarted, special.justCompleted, special.justCancelled]);
+  }, [powerAttack.justStarted, powerAttack.justCompleted, powerAttack.justCancelled]);
+  
+  return (
+    <div 
+      className="power-button"
+      style={{
+        transform: `scale(${powerAttack.scale})`,
+        opacity: powerAttack.opacity,
+        boxShadow: powerAttack.glow > 0 ? `0 0 ${powerAttack.glow * 20}px #ff6b35` : 'none',
+        marginLeft: `${powerAttack.shake}px`
+      }}
+    >
+      <div 
+        className="progress-bar"
+        style={{ width: `${powerAttack.progress}%` }}
+      />
+      <div>Progress: {Math.round(powerAttack.progress)}%</div>
+      <div>Time: {powerAttack.remainingTime}ms remaining</div>
+      {powerAttack.isReady && <div className="ready">READY!</div>}
+      {powerAttack.isCharging && <div>Charging Power Attack...</div>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' })
+      ]}
+    >
+      <PowerAttackButton />
+    </NormalizedKeysProvider>
+  );
+}
+```
+
+#### Game Character with Multiple Sequences
+
+```tsx
+function GameCharacter() {
+  const chargeJump = useHoldSequence('charge-jump');
+  const powerAttack = useHoldSequence('power-attack');
+  const shield = useHoldSequence('shield');
+  
+  // Trigger actions on sequence events
+  useEffect(() => {
+    if (chargeJump.justCompleted) {
+      executeChargeJump();
+    }
+    if (powerAttack.justStarted) {
+      showChargingEffect();
+    }
+    if (shield.justCancelled) {
+      hideShield();
+    }
+  }, [
+    chargeJump.justCompleted, 
+    powerAttack.justStarted, 
+    shield.justCancelled
+  ]);
   
   return (
     <div className="character">
-      <div>Combo: {combo.matchCount} completed</div>
-      <div>Special: {special.isHolding ? `${special.elapsedTime}ms` : 'Ready'}</div>
+      <div className="abilities">
+        <div className="ability charge-jump">
+          <div>Charge Jump: {Math.round(chargeJump.progress)}%</div>
+          {chargeJump.isCharging && <div>Hold Space to charge...</div>}
+        </div>
+        
+        <div className="ability power-attack">
+          <div>Power Attack: {Math.round(powerAttack.progress)}%</div>
+          {powerAttack.isReady && <div className="ready">READY!</div>}
+        </div>
+        
+        <div className="ability shield">
+          <div>Shield: {shield.isHolding ? 'ACTIVE' : 'Ready'}</div>
+          <div>Duration: {shield.elapsedTime}ms</div>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NormalizedKeysProvider 
+      sequences={[
+        holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
+        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' }),
+        holdSequence('shield', 's', 500, { name: 'Shield' })
+      ]}
+    >
+      <GameCharacter />
+    </NormalizedKeysProvider>
   );
 }
 ```
