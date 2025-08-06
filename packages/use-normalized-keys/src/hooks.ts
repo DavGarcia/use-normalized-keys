@@ -82,14 +82,10 @@ export function useHoldSequence(sequenceId: string) {
       
       if (currentHold && !releaseAnimationRef.current) {
         // Use the actual progress from Context (already smooth 60fps from main hook)
-        const targetProgress = currentHold.progressPercent;
-        
-        // Light smoothing for animation consistency, but trust the Context progress
-        const smoothingFactor = 0.3; // Higher factor = less smoothing, more responsive
-        const currentProgress = progressRef.current + (targetProgress - progressRef.current) * smoothingFactor;
+        const currentProgress = currentHold.progressPercent;
         progressRef.current = currentProgress;
         
-        // Calculate all animation properties based on progress
+        // Calculate all animation properties based on real progress (no additional smoothing)
         const scale = 1 + (currentProgress / 100) * 0.3; // Grows up to 1.3x
         const opacity = 0.3 + (currentProgress / 100) * 0.7; // Fades in to full opacity
         const glow = currentProgress > 80 ? (currentProgress - 80) / 20 : 0; // Glow effect near completion
