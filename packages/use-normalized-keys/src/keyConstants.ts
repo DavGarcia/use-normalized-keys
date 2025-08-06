@@ -11,12 +11,12 @@
  * import { Keys } from 'use-normalized-keys';
  * 
  * // ✅ Good - Type-safe and clear
- * holdSequence('jump', Keys.SPACE, 500)
- * comboSequence('hadouken', [Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT, Keys.ARROW_RIGHT, Keys.p], { timeout: 500 })
+ * holdSequence('brush-pressure', Keys.b, 800)
+ * comboSequence('save-file', [Keys.CONTROL, Keys.s], { timeout: 500 })
  * 
  * // ❌ Avoid - Error-prone
- * holdSequence('jump', ' ', 500)  // Should be 'Space'
- * comboSequence('hadouken', ['↓', '↘', '→', 'p'])  // Unicode arrows don't work
+ * holdSequence('brush-pressure', ' ', 800)  // Should be 'b'
+ * comboSequence('save-file', ['ctrl', 's'])  // Should use Keys constants
  * ```
  */
 
@@ -42,7 +42,7 @@ export const Keys = {
   ARROW_LEFT: 'ArrowLeft',
   ARROW_RIGHT: 'ArrowRight',
   
-  // Diagonal arrows (for fighting game moves)
+  // Diagonal arrows (for directional input)
   ARROW_UP_LEFT: 'ArrowUp+ArrowLeft',     // ↖ diagonal
   ARROW_UP_RIGHT: 'ArrowUp+ArrowRight',   // ↗ diagonal  
   ARROW_DOWN_LEFT: 'ArrowDown+ArrowLeft', // ↙ diagonal
@@ -112,10 +112,10 @@ export const Keys = {
   // Use the ARROW_* constants above for those cases
   
   // ========================================
-  // COMMON GAMING COMBINATIONS
+  // COMMON PRODUCTIVITY KEYS
   // ========================================
   
-  // WASD Movement
+  // Navigation keys
   W: 'w', A: 'a', S: 's', D: 'd',
   
   // Common modifier combinations (for reference)
@@ -129,26 +129,29 @@ export const Keys = {
 export type NormalizedKeyValue = typeof Keys[keyof typeof Keys];
 
 /**
- * Common key sequences for fighting games and gaming
+ * Common key sequences for productivity applications
  */
 export const CommonSequences = {
-  // Street Fighter style moves
-  HADOUKEN: [Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT, Keys.ARROW_RIGHT] as const,
-  SHORYUKEN: [Keys.ARROW_RIGHT, Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT] as const,
-  HURRICANE_KICK: [Keys.ARROW_DOWN, Keys.ARROW_DOWN_LEFT, Keys.ARROW_LEFT] as const,
+  // Text editor shortcuts
+  SAVE_FILE: ['Control', 's'] as const,
+  COPY: ['Control', 'c'] as const,
+  PASTE: ['Control', 'v'] as const,
+  UNDO: ['Control', 'z'] as const,
   
-  // Mortal Kombat style
-  FATALITY_BACK_FORWARD: [Keys.ARROW_LEFT, Keys.ARROW_RIGHT] as const,
+  // Drawing tool sequences
+  BRUSH_TOOL: ['b'] as const,
+  ERASER_TOOL: ['e'] as const,
+  PEN_TOOL: ['p'] as const,
   
-  // Classic sequences
-  KONAMI_CODE: [
-    Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN,
-    Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT,
-    Keys.b, Keys.a
-  ] as const,
+  // Navigation sequences
+  NAVIGATE_UP: ['ArrowUp'] as const,
+  NAVIGATE_DOWN: ['ArrowDown'] as const,
   
-  // Vim-style
-  VIM_ESCAPE: [Keys.j, Keys.k] as const,
+  // Vim-style escape sequence
+  VIM_ESCAPE: ['j', 'k'] as const,
+  
+  // Quick access sequences
+  COMMAND_PALETTE: ['Control', 'Shift', 'p'] as const,
 } as const;
 
 /**

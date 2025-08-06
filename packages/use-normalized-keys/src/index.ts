@@ -220,7 +220,7 @@ function shouldPreventDefault(
 /**
  * A React hook for normalized keyboard input handling with 60fps RAF animations
  * 
- * **Professional-grade keyboard input handling** optimized for games and interactive applications.
+ * **Professional-grade keyboard input handling** optimized for productivity and interactive applications.
  * Now with requestAnimationFrame-based hold progress updates for perfectly smooth 60fps animations.
  * 
  * **Key Features:**
@@ -231,7 +231,7 @@ function shouldPreventDefault(
  * - ⏱️ **Tap vs Hold**: Distinguish between quick taps and long holds with configurable thresholds
  * - 🚫 **preventDefault API**: Block browser shortcuts selectively or globally
  * - 🔤 **Key Normalization**: Consistent key names across browsers and keyboard layouts
- * - 🎮 **Gaming Features**: Focus loss recovery, input field exclusion, stuck key prevention
+ * - 💼 **Productivity Features**: Focus loss recovery, input field exclusion, stuck key prevention
  * - 📝 **TypeScript Ready**: Full type definitions with comprehensive IntelliSense
  * 
  * **NEW in v1.1.0**: RAF-based animation system eliminates stuttering and timing conflicts
@@ -245,15 +245,15 @@ function shouldPreventDefault(
  * 
  * function App() {
  *   return (
- *     <NormalizedKeysProvider sequences={[holdSequence('power', 'f', 1000)]}>
- *       <GameComponent />
+ *     <NormalizedKeysProvider sequences={[holdSequence('brush-pressure', 'b', 1000)]}>
+ *       <DrawingCanvas />
  *     </NormalizedKeysProvider>
  *   );
  * }
  * 
  * // Or direct usage (advanced)
  * const keys = useNormalizedKeys({
- *   sequences: [holdSequence('power', 'f', 1000)],
+ *   sequences: [holdSequence('brush-pressure', 'b', 1000)],
  *   onSequenceMatch: (match) => console.log('Sequence matched:', match.sequenceId),
  *   preventDefault: true
  * });
@@ -283,7 +283,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
   const platformQuirksRef = useRef(createPlatformQuirkState());
   
   const sequenceStateRef = useRef<SequenceState | null>(
-    sequences ? createSequenceState({
+    sequences !== undefined ? createSequenceState({
       sequences,
       ...(onSequenceMatch && { onSequenceMatch }),
       debug
@@ -774,7 +774,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
   };
 
   // Add sequence functionality if enabled
-  if (sequences) {
+  if (sequences !== undefined) {
     result.sequences = {
       matches: sequenceMatches,
       addSequence,

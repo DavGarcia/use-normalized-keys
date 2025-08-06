@@ -42,7 +42,7 @@ describe('Key Constants', () => {
     it('should have correct letter key values (lowercase)', () => {
       expect(Keys.a).toBe('a');
       expect(Keys.z).toBe('z');
-      expect(Keys.W).toBe('w');  // Gaming keys mapped to lowercase
+      expect(Keys.W).toBe('w');  // Navigation keys mapped to lowercase
       expect(Keys.A).toBe('a');
       expect(Keys.S).toBe('s');
       expect(Keys.D).toBe('d');
@@ -62,21 +62,23 @@ describe('Key Constants', () => {
   });
 
   describe('CommonSequences constant', () => {
-    it('should have correct Konami code sequence', () => {
-      expect(CommonSequences.KONAMI_CODE).toEqual([
-        'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
-        'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
-        'b', 'a'
+    it('should have correct text editor shortcuts', () => {
+      expect(CommonSequences.UNDO).toEqual([
+        'Control', 'z'
+      ]);
+      
+      expect(CommonSequences.PASTE).toEqual([
+        'Control', 'v'
       ]);
     });
 
-    it('should have correct fighting game sequences', () => {
-      expect(CommonSequences.HADOUKEN).toEqual([
-        'ArrowDown', 'ArrowDown+ArrowRight', 'ArrowRight'
+    it('should have correct productivity sequences', () => {
+      expect(CommonSequences.SAVE_FILE).toEqual([
+        'Control', 's'
       ]);
       
-      expect(CommonSequences.SHORYUKEN).toEqual([
-        'ArrowRight', 'ArrowDown', 'ArrowDown+ArrowRight'
+      expect(CommonSequences.COPY).toEqual([
+        'Control', 'c'
       ]);
     });
 
@@ -165,8 +167,8 @@ describe('Key Constants', () => {
       expect(Keys.z).toBe('z');
     });
 
-    it('should provide gaming-friendly key constants', () => {
-      // WASD gaming keys should be lowercase
+    it('should provide productivity-friendly key constants', () => {
+      // WASD navigation keys should be lowercase
       expect(Keys.W).toBe('w');
       expect(Keys.A).toBe('a');
       expect(Keys.S).toBe('s');

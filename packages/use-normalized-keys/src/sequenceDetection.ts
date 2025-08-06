@@ -2,7 +2,7 @@
  * Input Sequence Detection System
  * 
  * This module provides advanced sequence and combination detection for keyboard input,
- * enabling features like combo detection (e.g., "↑↑↓↓←→←→BA"), chord detection
+ * enabling features like sequence detection (e.g., "Save File" shortcuts), chord detection
  * (e.g., "Ctrl+Shift+P"), and timing-based sequences.
  */
 

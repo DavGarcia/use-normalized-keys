@@ -18,38 +18,38 @@ import type { CurrentHolds, HoldProgress, MatchedSequence } from './index';
  * 
  * **NEW in v1.1.0!** This hook combines functionality from useHoldProgress, useHoldAnimation, 
  * and useSequence into a single optimized API. It provides real-time progress tracking,
- * smooth 60fps visual effects using requestAnimationFrame, and game event detection.
+ * smooth 60fps visual effects using requestAnimationFrame, and professional application event detection.
  * 
  * **Key Benefits:**
  * - 🚀 **60fps Animations**: requestAnimationFrame for perfectly smooth visual effects
  * - ⚡ **Single Hook**: Replaces useHoldProgress + useHoldAnimation + useSequence
  * - 🎯 **Real-time Properties**: Progress, timing, animation values, and event flags
- * - 🎮 **Game-Optimized**: Built for responsive game mechanics
+ * - 🎨 **Productivity-Optimized**: Built for drawing tools, text editors, and professional apps
  * - 📊 **Complete API**: Everything you need in one optimized hook
  * 
  * **Usage:**
  * ```tsx
  * import { NormalizedKeysProvider, useHoldSequence, holdSequence } from 'use-normalized-keys';
  * 
- * function PowerAttack() {
- *   const power = useHoldSequence('power-attack');
+ * function BrushPressure() {
+ *   const pressure = useHoldSequence('pressure-build');
  *   
  *   return (
  *     <div style={{
- *       transform: `scale(${power.scale})`,
- *       opacity: power.opacity,
- *       boxShadow: power.glow > 0 ? `0 0 ${power.glow * 20}px #ff6b35` : 'none'
+ *       transform: `scale(${pressure.scale})`,
+ *       opacity: pressure.opacity,
+ *       boxShadow: pressure.glow > 0 ? `0 0 ${pressure.glow * 20}px #4a90e2` : 'none'
  *     }}>
- *       Progress: {Math.round(power.progress)}%
- *       {power.isReady && <span>READY!</span>}
+ *       Pressure: {Math.round(pressure.progress)}%
+ *       {pressure.isReady && <span>MAX PRESSURE!</span>}
  *     </div>
  *   );
  * }
  * 
- * function App() {
+ * function DrawingApp() {
  *   return (
- *     <NormalizedKeysProvider sequences={[holdSequence('power-attack', 'f', 1000)]}>
- *       <PowerAttack />
+ *     <NormalizedKeysProvider sequences={[holdSequence('pressure-build', 'b', 1000)]}>
+ *       <BrushPressure />
  *     </NormalizedKeysProvider>
  *   );
  * }
@@ -75,7 +75,7 @@ export function useHoldSequence(sequenceId: string) {
   
   const { currentHolds, sequences } = context;
   
-  // Event tracking state for game logic
+  // Event tracking state for application logic
   const [eventHistory, setEventHistory] = useState<Array<{
     timestamp: number;
     type: 'started' | 'completed' | 'cancelled';
@@ -105,7 +105,7 @@ export function useHoldSequence(sequenceId: string) {
   const isReady = currentProgress > 90;
   const isAnimating = isCharging;
 
-  // Track hold started/cancelled events for game logic
+  // Track hold started/cancelled events for application logic
   useEffect(() => {
     const currentHold = hold;
     const previousHold = previousHoldRef.current;
@@ -181,7 +181,7 @@ export function useHoldSequence(sequenceId: string) {
     /** Whether animation should be active (same as isCharging) */
     isAnimating,
     
-    // Game Event Flags (replaces useSequence functionality)
+    // Application Event Flags (replaces useSequence functionality)
     /** True for 100ms after hold sequence starts (use in useEffect) */
     justStarted: lastEvent?.type === 'started' && timeSinceLastEvent < eventWindow,
     /** True for 100ms after hold sequence completes (use in useEffect) */

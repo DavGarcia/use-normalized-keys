@@ -21,7 +21,7 @@ describe('sequenceHelpers', () => {
     });
 
     it('should normalize space key', () => {
-      const result = holdSequence('charge-jump', Keys.SPACE, 750);
+      const result = holdSequence('text-select', Keys.SPACE, 750);
       
       expect(result.keys[0]).toEqual({
         key: Keys.SPACE,
@@ -31,14 +31,14 @@ describe('sequenceHelpers', () => {
     });
 
     it('should accept custom name', () => {
-      const result = holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' });
+      const result = holdSequence('brush-pressure', Keys.b, 1000, { name: 'Brush Pressure' });
       
-      expect(result.name).toBe('Power Attack');
+      expect(result.name).toBe('Brush Pressure');
     });
 
     it('should include modifiers when provided', () => {
-      const result = holdSequence('special-move', Keys.s, 600, {
-        name: 'Special Move',
+      const result = holdSequence('save-with-shortcut', Keys.s, 600, {
+        name: 'Save Document',
         modifiers: { ctrl: true, shift: false }
       });
       
@@ -64,7 +64,7 @@ describe('sequenceHelpers', () => {
     });
 
     it('should normalize space keys in combo', () => {
-      const result = comboSequence('jump-combo', [Keys.ARROW_UP, Keys.SPACE, Keys.ARROW_UP]);
+      const result = comboSequence('navigate-combo', [Keys.ARROW_UP, Keys.SPACE, Keys.ARROW_UP]);
       
       expect(result.keys).toEqual([Keys.ARROW_UP, Keys.SPACE, Keys.ARROW_UP]);
     });
@@ -116,36 +116,36 @@ describe('sequenceHelpers', () => {
   describe('holdSequences', () => {
     it('should create multiple hold sequences', () => {
       const configs = [
-        { id: 'light-punch', key: Keys.j, duration: 200 },
-        { id: 'medium-punch', key: Keys.j, duration: 500 },
-        { id: 'heavy-punch', key: Keys.j, duration: 1000 }
+        { id: 'light-pressure', key: Keys.b, duration: 200 },
+        { id: 'medium-pressure', key: Keys.b, duration: 500 },
+        { id: 'heavy-pressure', key: Keys.b, duration: 1000 }
       ];
       
       const results = holdSequences(configs);
       
       expect(results).toHaveLength(3);
-      expect(results[0].id).toBe('light-punch');
+      expect(results[0].id).toBe('light-pressure');
       expect(results[0].keys[0].minHoldTime).toBe(200);
-      expect(results[1].id).toBe('medium-punch');
+      expect(results[1].id).toBe('medium-pressure');
       expect(results[1].keys[0].minHoldTime).toBe(500);
-      expect(results[2].id).toBe('heavy-punch');
+      expect(results[2].id).toBe('heavy-pressure');
       expect(results[2].keys[0].minHoldTime).toBe(1000);
     });
 
     it('should pass through names and modifiers', () => {
       const configs = [
         { 
-          id: 'special-1', 
-          key: Keys.s, 
+          id: 'draw-tool-1', 
+          key: Keys.p, 
           duration: 500, 
-          name: 'Special Move 1',
+          name: 'Pen Tool',
           modifiers: { ctrl: true }
         }
       ];
       
       const results = holdSequences(configs);
       
-      expect(results[0].name).toBe('Special Move 1');
+      expect(results[0].name).toBe('Pen Tool');
       expect(results[0].keys[0].modifiers).toEqual({ ctrl: true });
     });
   });

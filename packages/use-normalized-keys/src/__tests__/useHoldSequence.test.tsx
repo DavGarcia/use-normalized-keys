@@ -178,7 +178,7 @@ describe('useHoldSequence - Unified Hook', () => {
     });
   });
 
-  describe('Game Event Flags (useSequence functionality)', () => {
+  describe('Application Event Flags (useSequence functionality)', () => {
     it('should return correct initial event state', () => {
       const { result } = renderHook(() => useHoldSequence('test-sequence'), {
         wrapper: ({ children }) => (
@@ -246,7 +246,7 @@ describe('useHoldSequence - Unified Hook', () => {
         'isReady',
         'isAnimating',
         
-        // Game event flags (useSequence)
+        // Application event flags (useSequence)
         'justStarted',
         'justCompleted',
         'justCancelled',

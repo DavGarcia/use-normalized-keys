@@ -68,22 +68,22 @@ export interface NormalizedKeysProviderProps {
  * ```tsx
  * import { NormalizedKeysProvider, useHoldSequence, holdSequence } from 'use-normalized-keys';
  * 
- * function GameComponent() {
- *   const powerAttack = useHoldSequence('power-attack');
- *   return <div>Power: {powerAttack.progress}%</div>;
+ * function DrawingComponent() {
+ *   const brushPressure = useHoldSequence('brush-pressure');
+ *   return <div>Pressure: {brushPressure.progress}%</div>;
  * }
  * 
  * function App() {
  *   return (
  *     <NormalizedKeysProvider 
  *       sequences={[
- *         holdSequence('power-attack', 'f', 1000)
+ *         holdSequence('brush-pressure', 'b', 1000)
  *       ]}
  *       debug={true}
  *       tapHoldThreshold={200}
  *       preventDefault={['Tab', 'F5']}
  *     >
- *       <GameComponent />
+ *       <DrawingComponent />
  *     </NormalizedKeysProvider>
  *   );
  * }
@@ -133,7 +133,7 @@ export function NormalizedKeysProvider({
  * 
  * **When to use `useHoldSequence` instead:**
  * - Tracking hold progress with visual animations
- * - Game mechanics with charging/power-up effects
+ * - Drawing tools with pressure/intensity effects
  * - Any sequence-based interactions
  * 
  * @returns NormalizedKeysContextType when inside Provider, null otherwise

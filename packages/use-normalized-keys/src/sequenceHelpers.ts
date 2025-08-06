@@ -19,9 +19,9 @@ import { Keys } from './keyConstants';
  * @returns SequenceDefinition for a hold sequence
  * 
  * @example
- * holdSequence('charge-jump', Keys.SPACE, 750)
- * holdSequence('power-attack', Keys.f, 1000, { name: 'Power Attack' })
- * holdSequence('special-move', Keys.s, 600, { modifiers: { ctrl: true } })
+ * holdSequence('brush-pressure', Keys.b, 750)
+ * holdSequence('pen-pressure', Keys.p, 1000, { name: 'Pen Pressure Build' })
+ * holdSequence('save-draft', Keys.s, 600, { modifiers: { ctrl: true } })
  */
 export function holdSequence(
   id: string,
@@ -63,8 +63,8 @@ export function holdSequence(
  * @returns SequenceDefinition for a sequential combo
  * 
  * @example
- * comboSequence('konami', [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a])
- * comboSequence('hadouken', [Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT, Keys.ARROW_RIGHT, Keys.p], { timeout: 500 })
+ * comboSequence('quick-save', [Keys.CONTROL, Keys.s, Keys.ENTER], { timeout: 500 })
+ * comboSequence('brush-to-eraser', [Keys.b, Keys.e], { name: 'Switch to Eraser', timeout: 500 })
  * comboSequence('vim-escape', [Keys.j, Keys.k], { name: 'Vim Escape', timeout: 300 })
  */
 export function comboSequence(
@@ -126,16 +126,16 @@ export function chordSequence(
 
 /**
  * Creates multiple hold sequences with a common pattern
- * Useful for fighting games with multiple charge moves
+ * Useful for drawing applications with variable pressure levels
  * 
  * @param configs - Array of hold configurations
  * @returns Array of SequenceDefinitions
  * 
  * @example
  * holdSequences([
- *   { id: 'light-punch', key: Keys.j, duration: 200 },
- *   { id: 'medium-punch', key: Keys.j, duration: 500 },
- *   { id: 'heavy-punch', key: Keys.j, duration: 1000 }
+ *   { id: 'light-pressure', key: Keys.b, duration: 200 },
+ *   { id: 'medium-pressure', key: Keys.b, duration: 500 },
+ *   { id: 'heavy-pressure', key: Keys.b, duration: 1000 }
  * ])
  */
 export function holdSequences(
