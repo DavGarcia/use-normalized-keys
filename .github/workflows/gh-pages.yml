@@ -52,7 +52,8 @@ jobs:
           cp -r packages/use-normalized-keys/dist-demo/* dist/demo/
           # Copy tools to /tools subdirectory  
           mkdir -p dist/tools
-          cp -r packages/use-normalized-keys/dist-tools/* dist/tools/
+          cp -r packages/use-normalized-keys/dist-tools/tools/* dist/tools/
+          cp -r packages/use-normalized-keys/dist-tools/assets dist/tools/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
