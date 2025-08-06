@@ -28,19 +28,15 @@ describe('Package Exports', () => {
   });
 
   describe('Helper Hook Exports', () => {
-    it('should export useHoldProgress', () => {
-      expect(exports.useHoldProgress).toBeDefined();
-      expect(typeof exports.useHoldProgress).toBe('function');
+    it('should export useHoldSequence (unified hook)', () => {
+      expect(exports.useHoldSequence).toBeDefined();
+      expect(typeof exports.useHoldSequence).toBe('function');
     });
 
-    it('should export useHoldAnimation', () => {
-      expect(exports.useHoldAnimation).toBeDefined();
-      expect(typeof exports.useHoldAnimation).toBe('function');
-    });
-
-    it('should export useSequence', () => {
-      expect(exports.useSequence).toBeDefined();
-      expect(typeof exports.useSequence).toBe('function');
+    it('should no longer export old hooks (useHoldProgress, useHoldAnimation, useSequence)', () => {
+      expect(exports.useHoldProgress).toBeUndefined();
+      expect(exports.useHoldAnimation).toBeUndefined();
+      expect(exports.useSequence).toBeUndefined();
     });
   });
 
@@ -91,9 +87,7 @@ describe('Package Exports', () => {
         'NormalizedKeysProvider', 
         'useNormalizedKeysContext',
         // Helper hooks
-        'useHoldProgress',
-        'useHoldAnimation',
-        'useSequence',
+        'useHoldSequence',
         // Sequence helpers
         'comboSequence',
         'holdSequence',

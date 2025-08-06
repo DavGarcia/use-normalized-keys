@@ -768,9 +768,6 @@ export type {
 
 // Export helper hooks
 export { 
-  useHoldProgress,
-  useHoldAnimation,
-  useSequence,
   useHoldSequence
 } from './hooks';
 
