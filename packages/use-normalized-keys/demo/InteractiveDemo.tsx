@@ -1,59 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   useNormalizedKeysContext,
-  useHoldProgress,
-  useHoldAnimation,
+  useHoldSequence,
   SequenceDefinition, 
   MatchedSequence,
   CurrentHolds,
 } from '../src';
 import './InteractiveDemo.css';
 
-// Custom hook for smooth hold progress using requestAnimationFrame
-function useSmoothHoldProgress(sequenceId: string, currentHolds: CurrentHolds) {
-  const [progress, setProgress] = useState(0);
-  const [isHolding, setIsHolding] = useState(false);
-  const animationFrameRef = useRef<number>();
-  
-  useEffect(() => {
-    const updateProgress = () => {
-      const holdInfo = currentHolds.get(sequenceId);
-      if (holdInfo) {
-        const elapsed = Date.now() - holdInfo.startTime;
-        const progress = Math.min(100, (elapsed / holdInfo.minHoldTime) * 100);
-        setProgress(progress);
-        setIsHolding(true);
-        
-        if (!holdInfo.isComplete) {
-          animationFrameRef.current = requestAnimationFrame(updateProgress);
-        }
-      } else {
-        setProgress(0);
-        setIsHolding(false);
-      }
-    };
-    
-    const holdInfo = currentHolds.get(sequenceId);
-    if (holdInfo) {
-      animationFrameRef.current = requestAnimationFrame(updateProgress);
-    } else {
-      setProgress(0);
-      setIsHolding(false);
-    }
-    
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [currentHolds.get(sequenceId), sequenceId]);
-  
-  return { progress, isHolding };
-}
+// This custom hook has been replaced by the unified useHoldSequence hook
 
-// Charge Jump Indicator using smooth progress
-function ChargeJumpIndicator({ currentHolds, animationHook }: { currentHolds: CurrentHolds, animationHook: any }) {
-  const { progress, isHolding } = useSmoothHoldProgress('charge-jump', currentHolds);
+// Charge Jump Indicator using unified hook
+function ChargeJumpIndicator() {
+  const chargeJumpHook = useHoldSequence('charge-jump');
   
   return (
     <div className="hold-indicator">
@@ -61,23 +20,23 @@ function ChargeJumpIndicator({ currentHolds, animationHook }: { currentHolds: Cu
         <div 
           className="charge-fill"
           style={{
-            width: `${progress}%`,
-            backgroundColor: animationHook.isReady ? '#10b981' : '#3eaf7c',
-            boxShadow: `0 0 ${animationHook.glow * 20}px rgba(62, 175, 124, 0.6)`,
-            transform: `scaleY(${animationHook.scale})`,
-            opacity: animationHook.opacity,
+            width: `${chargeJumpHook.progress}%`,
+            backgroundColor: chargeJumpHook.isReady ? '#10b981' : '#3eaf7c',
+            boxShadow: `0 0 ${chargeJumpHook.glow * 20}px rgba(62, 175, 124, 0.6)`,
+            transform: `scaleY(${chargeJumpHook.scale}) translateX(${chargeJumpHook.shake}px)`,
+            opacity: chargeJumpHook.opacity,
             transition: 'transform 0.1s ease-out, box-shadow 0.1s ease-out, background-color 0.1s ease-out, opacity 0.1s ease-out'
           }}
         />
       </div>
       <div className="hold-info">
         <span className="hold-key">Hold SPACE</span>
-        {animationHook.isCharging && !animationHook.isReady && <span className="charging-text">⚡ Charging...</span>}
-        {animationHook.isReady && <span className="ready-text">✨ Ready!</span>}
+        {chargeJumpHook.isCharging && !chargeJumpHook.isReady && <span className="charging-text">⚡ Charging...</span>}
+        {chargeJumpHook.isReady && <span className="ready-text">✨ Ready!</span>}
       </div>
-      {isHolding && (
+      {chargeJumpHook.isHolding && (
         <div className="hold-stats">
-          <span>{Math.round(progress)}%</span>
+          <span>{Math.round(chargeJumpHook.progress)}%</span>
         </div>
       )}
     </div>
@@ -194,21 +153,11 @@ export default function InteractiveDemo({
     currentHolds
   } = contextState;
 
-  // Use the new helper hooks for hold detection examples
-  const chargeJumpProgress = useHoldProgress('charge-jump');
-  const chargeJumpAnimation = useHoldAnimation('charge-jump');
-  
-  const powerAttackProgress = useHoldProgress('power-attack');
-  const powerAttackAnimation = useHoldAnimation('power-attack');
-  
-  const heavyPunchProgress = useHoldProgress('heavy-punch');
-  const heavyPunchAnimation = useHoldAnimation('heavy-punch');
-  
-  const specialMoveProgress = useHoldProgress('special-move');
-  const specialMoveAnimation = useHoldAnimation('special-move');
-  
-  const customHoldProgress = useHoldProgress('custom-hold');
-  const customHoldAnimation = useHoldAnimation('custom-hold');
+  // Use the unified hook for all hold detection examples
+  const powerAttackHook = useHoldSequence('power-attack');
+  const heavyPunchHook = useHoldSequence('heavy-punch');
+  const specialMoveHook = useHoldSequence('special-move');
+  const customHoldHook = useHoldSequence('custom-hold');
 
   // Track event history and key codes
   useEffect(() => {
@@ -598,7 +547,7 @@ export default function InteractiveDemo({
               <div className="hold-example">
                 <h3>🎮 Charge Jump</h3>
                 <p>Hold Space to charge your jump</p>
-                <ChargeJumpIndicator currentHolds={currentHolds} animationHook={chargeJumpAnimation} />
+                <ChargeJumpIndicator />
               </div>
               
               <div className="hold-example">
@@ -609,23 +558,23 @@ export default function InteractiveDemo({
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${useSmoothHoldProgress('power-attack', currentHolds).progress}%`,
-                        backgroundColor: powerAttackAnimation.isReady ? '#dc2626' : '#ef4444',
-                        boxShadow: `0 0 ${powerAttackAnimation.glow * 25}px rgba(239, 68, 68, 0.8)`,
-                        transform: `scaleY(${powerAttackAnimation.scale})`,
-                        opacity: powerAttackAnimation.opacity,
+                        width: `${powerAttackHook.progress}%`,
+                        backgroundColor: powerAttackHook.isReady ? '#dc2626' : '#ef4444',
+                        boxShadow: `0 0 ${powerAttackHook.glow * 25}px rgba(239, 68, 68, 0.8)`,
+                        transform: `scaleY(${powerAttackHook.scale}) translateX(${powerAttackHook.shake}px)`,
+                        opacity: powerAttackHook.opacity,
                         transition: 'all 0.1s ease-out'
                       }}
                     />
                   </div>
                   <div className="hold-info">
                     <span className="hold-key">Hold F</span>
-                    {powerAttackAnimation.isCharging && !powerAttackAnimation.isReady && <span className="charging-text">🔥 Charging...</span>}
-                    {powerAttackAnimation.isReady && <span className="ready-text shake">💥 READY!</span>}
+                    {powerAttackHook.isCharging && !powerAttackHook.isReady && <span className="charging-text">🔥 Charging...</span>}
+                    {powerAttackHook.isReady && <span className="ready-text shake">💥 READY!</span>}
                   </div>
-                  {powerAttackProgress.isHolding && (
+                  {powerAttackHook.isHolding && (
                     <div className="hold-stats">
-                      <span>{Math.round(currentHolds.get('power-attack')?.progressPercent || 0)}%</span>
+                      <span>{Math.round(powerAttackHook.progress)}%</span>
                     </div>
                   )}
                 </div>
@@ -639,19 +588,19 @@ export default function InteractiveDemo({
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${useSmoothHoldProgress('heavy-punch', currentHolds).progress}%`,
-                        backgroundColor: heavyPunchAnimation.isReady ? '#ea580c' : '#f59e0b',
-                        boxShadow: `0 0 ${heavyPunchAnimation.glow * 15}px rgba(245, 158, 11, 0.7)`,
-                        transform: `scaleY(${heavyPunchAnimation.scale}) ${heavyPunchAnimation.shake > 0 ? `translateX(${Math.sin(Date.now() * 0.02) * heavyPunchAnimation.shake * 2}px)` : ''}`,
-                        opacity: heavyPunchAnimation.opacity,
+                        width: `${heavyPunchHook.progress}%`,
+                        backgroundColor: heavyPunchHook.isReady ? '#ea580c' : '#f59e0b',
+                        boxShadow: `0 0 ${heavyPunchHook.glow * 15}px rgba(245, 158, 11, 0.7)`,
+                        transform: `scaleY(${heavyPunchHook.scale}) translateX(${heavyPunchHook.shake}px)`,
+                        opacity: heavyPunchHook.opacity,
                         transition: 'transform 0.05s ease-out'
                       }}
                     />
                   </div>
                   <div className="hold-info">
                     <span className="hold-key">Hold H</span>
-                    {heavyPunchAnimation.isAnimating && !heavyPunchAnimation.isReady && <span className="charging-text">👊 Winding up...</span>}
-                    {heavyPunchAnimation.isReady && <span className="ready-text">🥊 PUNCH!</span>}
+                    {heavyPunchHook.isAnimating && !heavyPunchHook.isReady && <span className="charging-text">👊 Winding up...</span>}
+                    {heavyPunchHook.isReady && <span className="ready-text">🥊 PUNCH!</span>}
                   </div>
                 </div>
               </div>
@@ -664,19 +613,19 @@ export default function InteractiveDemo({
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${useSmoothHoldProgress('special-move', currentHolds).progress}%`,
-                        backgroundColor: specialMoveAnimation.isReady ? '#7c3aed' : '#a855f7',
-                        boxShadow: `0 0 ${specialMoveAnimation.glow * 30}px rgba(168, 85, 247, 0.9)`,
-                        transform: `scaleY(${specialMoveAnimation.scale})`,
-                        opacity: specialMoveAnimation.opacity,
+                        width: `${specialMoveHook.progress}%`,
+                        backgroundColor: specialMoveHook.isReady ? '#7c3aed' : '#a855f7',
+                        boxShadow: `0 0 ${specialMoveHook.glow * 30}px rgba(168, 85, 247, 0.9)`,
+                        transform: `scaleY(${specialMoveHook.scale}) translateX(${specialMoveHook.shake}px)`,
+                        opacity: specialMoveHook.opacity,
                         transition: 'all 0.1s ease-out'
                       }}
                     />
                   </div>
                   <div className="hold-info">
                     <span className="hold-key">Hold CTRL+Q</span>
-                    {specialMoveAnimation.isCharging && !specialMoveAnimation.isReady && <span className="charging-text">⚡ Channeling...</span>}
-                    {specialMoveAnimation.isReady && <span className="ready-text rainbow">🌟 SPECIAL!</span>}
+                    {specialMoveHook.isCharging && !specialMoveHook.isReady && <span className="charging-text">⚡ Channeling...</span>}
+                    {specialMoveHook.isReady && <span className="ready-text rainbow">🌟 SPECIAL!</span>}
                   </div>
                 </div>
               </div>
@@ -703,19 +652,19 @@ export default function InteractiveDemo({
                     <div 
                       className="charge-fill"
                       style={{
-                        width: `${useSmoothHoldProgress('custom-hold', currentHolds).progress}%`,
-                        backgroundColor: customHoldAnimation.isReady ? '#0891b2' : '#3b82f6',
-                        boxShadow: `0 0 ${customHoldAnimation.glow * 20}px rgba(59, 130, 246, 0.7)`,
-                        transform: `scaleY(${customHoldAnimation.scale})`,
-                        opacity: customHoldAnimation.opacity,
+                        width: `${customHoldHook.progress}%`,
+                        backgroundColor: customHoldHook.isReady ? '#0891b2' : '#3b82f6',
+                        boxShadow: `0 0 ${customHoldHook.glow * 20}px rgba(59, 130, 246, 0.7)`,
+                        transform: `scaleY(${customHoldHook.scale}) translateX(${customHoldHook.shake}px)`,
+                        opacity: customHoldHook.opacity,
                         transition: 'all 0.1s ease-out'
                       }}
                     />
                   </div>
                   <div className="hold-info">
                     <span className="hold-key">Hold X to test custom duration</span>
-                    {customHoldProgress.isHolding && (
-                      <span className="timing-info">{customHoldProgress.elapsedTime}ms / {customHoldProgress.minHoldTime}ms</span>
+                    {customHoldHook.isHolding && (
+                      <span className="timing-info">{customHoldHook.elapsedTime}ms / {customHoldHook.minHoldTime}ms</span>
                     )}
                   </div>
                 </div>

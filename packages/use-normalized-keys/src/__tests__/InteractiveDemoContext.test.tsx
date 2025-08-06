@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import InteractiveDemo from '../../demo/InteractiveDemo';
-import { NormalizedKeysProvider, useHoldProgress } from '../index';
+import { NormalizedKeysProvider, useHoldSequence } from '../index';
 
 // Mock CSS import
 vi.mock('../../demo/InteractiveDemo.css', () => ({}));
@@ -101,8 +101,8 @@ describe('InteractiveDemo with Context Provider', () => {
     // they would work correctly with the Provider
     const TestComponent = () => {
       try {
-        const progress = useHoldProgress('test');
-        return <div data-testid="progress">{progress.progress}</div>;
+        const holdSequence = useHoldSequence('test');
+        return <div data-testid="progress">{holdSequence.progress}</div>;
       } catch (error) {
         return <div data-testid="error">{(error as Error).message}</div>;
       }
@@ -111,7 +111,7 @@ describe('InteractiveDemo with Context Provider', () => {
     const { rerender } = render(<TestComponent />);
     
     // Without Provider, should show error
-    expect(screen.getByTestId('error')).toHaveTextContent('useHoldProgress must be used within a NormalizedKeysProvider');
+    expect(screen.getByTestId('error')).toHaveTextContent('useHoldSequence must be used within a NormalizedKeysProvider');
 
     // With Provider, should work
     rerender(
