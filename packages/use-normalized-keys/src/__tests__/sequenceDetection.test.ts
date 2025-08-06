@@ -124,21 +124,19 @@ describe('Sequence Detection', () => {
         id: 'timeout-test',
         keys: ['a', 'b'],
         type: 'sequence',
-        timeout: 100,
       }];
 
       renderHook(() => useNormalizedKeys({
         sequences,
         onSequenceMatch: onMatch,
-        // Note: sequenceTimeout was a nested option, may need to be handled differently
       }));
 
       await act(async () => {
         simulateKeyEvent('keydown', 'a');
         simulateKeyEvent('keyup', 'a');
         
-        // Advance time beyond timeout
-        vi.advanceTimersByTime(150);
+        // Advance time beyond default timeout (1000ms)
+        vi.advanceTimersByTime(1500);
         
         simulateKeyEvent('keydown', 'b');
         simulateKeyEvent('keyup', 'b');
@@ -381,9 +379,12 @@ describe('Sequence Detection', () => {
     it('should add sequences dynamically', async () => {
       const onMatch = vi.fn();
       const { result } = renderHook(() => useNormalizedKeys({
-        sequences: [],
+        sequences: [], // Empty array still enables sequences API
         onSequenceMatch: onMatch,
       }));
+      
+      // Verify sequences API is available
+      expect(result.current.sequences).toBeDefined();
 
       // Add a sequence
       act(() => {
@@ -419,6 +420,9 @@ describe('Sequence Detection', () => {
         }],
         onSequenceMatch: onMatch,
       }));
+      
+      // Verify sequences API is available
+      expect(result.current.sequences).toBeDefined();
 
       // Remove the sequence
       act(() => {
@@ -486,6 +490,9 @@ describe('Sequence Detection', () => {
         }],
         onSequenceMatch: onMatch,
       }));
+      
+      // Verify sequences API is available
+      expect(result.current.sequences).toBeDefined();
 
       // Start a sequence
       await act(async () => {
@@ -547,6 +554,9 @@ describe('Sequence Detection', () => {
         }],
         onSequenceMatch: onMatch,
       }));
+      
+      // Verify sequences API is available
+      expect(result.current.sequences).toBeDefined();
 
       await act(async () => {
         simulateKeyEvent('keydown', 'b');

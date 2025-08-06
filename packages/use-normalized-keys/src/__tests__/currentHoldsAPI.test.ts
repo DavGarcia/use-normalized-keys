@@ -32,7 +32,7 @@ describe('currentHolds API', () => {
     
     const { result } = renderHook(() => 
       useNormalizedKeys({ 
-        sequences: { sequences } 
+        sequences 
       })
     );
     
@@ -70,7 +70,7 @@ describe('currentHolds API', () => {
     
     const { result } = renderHook(() => 
       useNormalizedKeys({ 
-        sequences: { sequences },
+        sequences,
         debug: true
       })
     );
@@ -118,7 +118,7 @@ describe('currentHolds API', () => {
     
     const { result } = renderHook(() => 
       useNormalizedKeys({ 
-        sequences: { sequences } 
+        sequences 
       })
     );
     

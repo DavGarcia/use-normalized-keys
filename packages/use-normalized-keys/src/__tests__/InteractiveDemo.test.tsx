@@ -23,6 +23,8 @@ describe('InteractiveDemo', () => {
     setDebugMode: vi.fn(),
     showSequences: true,
     setShowSequences: vi.fn(),
+    preventDefault: false,
+    setPreventDefault: vi.fn(),
     customHoldTime: 500,
     setCustomHoldTime: vi.fn(),
     customSequences: [],
@@ -56,12 +58,11 @@ describe('InteractiveDemo', () => {
       expect(screen.getByText('Test Input Field')).toBeInTheDocument();
     });
 
-    it('should show preventDefault status indicator', () => {
+    it('should show preventDefault checkbox control', () => {
       renderWithProvider();
       
-      expect(screen.getByText('preventDefault:')).toBeInTheDocument();
-      expect(screen.getByText('✓ Enabled')).toBeInTheDocument();
-      expect(screen.getByText('(Browser shortcuts like F5, Ctrl+S, etc. are prevented)')).toBeInTheDocument();
+      expect(screen.getByText('Prevent Default (Browser shortcuts like F5, Ctrl+S, etc.)')).toBeInTheDocument();
+      expect(screen.getByRole('checkbox', { name: 'Prevent Default (Browser shortcuts like F5, Ctrl+S, etc.)' })).toBeInTheDocument();
     });
 
     it('should display platform information', () => {
@@ -69,8 +70,8 @@ describe('InteractiveDemo', () => {
       
       expect(screen.getAllByText(/Platform:/)[0]).toBeInTheDocument();
       expect(screen.getAllByText(/Events:/)[0]).toBeInTheDocument();
-      expect(screen.getByText(/Avg Process:/)).toBeInTheDocument();
-      expect(screen.getAllByText(/Pressed Keys:/)[0]).toBeInTheDocument();
+      expect(screen.getByText(/Avg Processing:/)).toBeInTheDocument();
+      expect(screen.getByText(/Pressed Keys \(\d+\)/)).toBeInTheDocument();
     });
 
     it('should render virtual keyboard with keys', () => {
@@ -116,16 +117,25 @@ describe('InteractiveDemo', () => {
       expect(checkbox).toBeChecked(); // Default true
     });
 
+    it('should show prevent default checkbox with correct state', () => {
+      renderWithProvider();
+      
+      const checkbox = screen.getByRole('checkbox', { name: 'Prevent Default (Browser shortcuts like F5, Ctrl+S, etc.)' });
+      expect(checkbox).not.toBeChecked(); // Default false
+    });
+
     it('should call state setters when checkboxes are clicked', () => {
       const mockSetExcludeInputs = vi.fn();
       const mockSetDebugMode = vi.fn();
       const mockSetShowSequences = vi.fn();
+      const mockSetPreventDefault = vi.fn();
       
       renderWithProvider({
         ...mockProps,
         setExcludeInputs: mockSetExcludeInputs,
         setDebugMode: mockSetDebugMode,
         setShowSequences: mockSetShowSequences,
+        setPreventDefault: mockSetPreventDefault,
       });
       
       fireEvent.click(screen.getByRole('checkbox', { name: 'Exclude Input Fields' }));
@@ -136,6 +146,9 @@ describe('InteractiveDemo', () => {
       
       fireEvent.click(screen.getByRole('checkbox', { name: 'Enable Sequences' }));
       expect(mockSetShowSequences).toHaveBeenCalled();
+      
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Prevent Default (Browser shortcuts like F5, Ctrl+S, etc.)' }));
+      expect(mockSetPreventDefault).toHaveBeenCalled();
     });
   });
 
@@ -299,12 +312,12 @@ describe('InteractiveDemo', () => {
       
       // Check that the metrics labels are present (using getAllByText since they appear twice)
       expect(screen.getAllByText('Events:')[0]).toBeInTheDocument();
-      expect(screen.getByText('Avg Process:')).toBeInTheDocument();
-      expect(screen.getAllByText('Pressed Keys:')[0]).toBeInTheDocument();
+      expect(screen.getByText('Avg Processing:')).toBeInTheDocument();
+      expect(screen.getByText(/Pressed Keys \(\d+\)/)).toBeInTheDocument();
       
       // Check that metrics have initial values
-      const infoBar = screen.getAllByText('Events:')[0].closest('.demo-info-bar');
-      expect(infoBar).toBeInTheDocument();
+      const infoItem = screen.getAllByText('Events:')[0].closest('.info-item');
+      expect(infoItem).toBeInTheDocument();
     });
   });
 
@@ -327,7 +340,7 @@ describe('InteractiveDemo', () => {
       
       // Check for checkbox roles
       const checkboxes = screen.getAllByRole('checkbox');
-      expect(checkboxes).toHaveLength(4); // Exclude, Debug, Sequences, Show Debug Panel
+      expect(checkboxes).toHaveLength(4); // Exclude, Debug, Sequences, Prevent Default
       
       // Check that we have text inputs
       const testInput = screen.getByPlaceholderText(/Keys won't be captured while typing here/);

@@ -33,7 +33,7 @@ describe('Hold Progress RAF Optimization', () => {
 
   it('should not run RAF when no holds are active', () => {
     const { result } = renderHook(() => useNormalizedKeys({
-      sequences: { sequences: [] }
+      sequences: []
     }));
     
     expect(result.current.currentHolds.size).toBe(0);
@@ -44,11 +44,9 @@ describe('Hold Progress RAF Optimization', () => {
 
   it('should start RAF when hold sequence is added and becomes active', () => {
     const { result } = renderHook(() => useNormalizedKeys({
-      sequences: { 
-        sequences: [
-          holdSequence('test-hold', 'Space', 500)
-        ]
-      }
+      sequences: [
+        holdSequence('test-hold', 'Space', 500)
+      ]
     }));
     
     // Initially no holds
@@ -72,11 +70,9 @@ describe('Hold Progress RAF Optimization', () => {
 
   it('should stop RAF when hold sequence completes', async () => {
     const { result } = renderHook(() => useNormalizedKeys({
-      sequences: { 
-        sequences: [
-          holdSequence('test-hold', 'Space', 100) // Short hold for testing
-        ]
-      }
+      sequences: [
+        holdSequence('test-hold', 'Space', 100) // Short hold for testing
+      ]
     }));
     
     // Start hold sequence
@@ -111,12 +107,10 @@ describe('Hold Progress RAF Optimization', () => {
 
   it('should manage RAF correctly with multiple holds', async () => {
     const { result } = renderHook(() => useNormalizedKeys({
-      sequences: { 
-        sequences: [
-          holdSequence('hold-1', 'Space', 200),
-          holdSequence('hold-2', 'Enter', 300)
-        ]
-      }
+      sequences: [
+        holdSequence('hold-1', 'Space', 200),
+        holdSequence('hold-2', 'Enter', 300)
+      ]
     }));
     
     // Start first hold

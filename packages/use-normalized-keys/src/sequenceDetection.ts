@@ -336,7 +336,10 @@ export function processSequenceEvent(
     }
     
     // Check for timeouts (only if we had a previous key)
-    if (state.lastKeyTime > 0 && now - state.lastKeyTime > options.sequenceTimeout) {
+    const timeoutToUse = options.sequenceTimeout; // For now, use global timeout
+    // TODO: Individual sequence timeouts could be implemented by checking active sequences
+    
+    if (state.lastKeyTime > 0 && now - state.lastKeyTime > timeoutToUse) {
       // Reset sequence due to timeout
       if (options.debug) {
         console.log('[sequenceDetection] Sequence timeout, resetting');
