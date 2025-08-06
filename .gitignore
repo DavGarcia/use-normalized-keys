@@ -67,3 +67,4 @@ temp/
 /aidocs
 /.agent-os
 .claude/settings.local.json
+/packages/use-normalized-keys/dist-demo
