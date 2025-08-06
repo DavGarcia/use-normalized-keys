@@ -14,14 +14,14 @@ useNormalizedKeys is designed to work out of the box with minimal configuration,
 const keys = useNormalizedKeys({ enabled: false });
 ```
 
-This is useful when you need to temporarily disable keyboard handling, such as when a modal is open or the game is paused.
+This is useful when you need to temporarily disable keyboard handling, such as when a modal is open or the editor is inactive.
 
 ## Dynamic Configuration
 
 You can change the configuration dynamically by passing different options:
 
 ```tsx
-function GameComponent() {
+function EditorComponent() {
   const [isPaused, setIsPaused] = useState(false);
   const keys = useNormalizedKeys({ enabled: !isPaused });
   
@@ -45,8 +45,8 @@ function GameComponent() {
 You can use multiple instances of the hook for different purposes:
 
 ```tsx
-function ComplexGame() {
-  const gameKeys = useNormalizedKeys({ enabled: gameActive });
+function ComplexEditor() {
+  const editorKeys = useNormalizedKeys({ enabled: editorActive });
   const menuKeys = useNormalizedKeys({ enabled: menuActive });
   
   // Each instance tracks keyboard state independently

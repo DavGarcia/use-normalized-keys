@@ -6,14 +6,14 @@ A complete reference for normalized key values in use-normalized-keys.
 
 ```typescript
 // ❌ WRONG - These will NOT work
-holdSequence('jump', ' ', 500)           // Use 'Space' not ' '
-comboSequence('move', ['↓', '→', 'p'])   // Use 'ArrowDown', 'ArrowRight' not unicode arrows
+holdSequence('scroll', ' ', 500)         // Use 'Space' not ' '
+comboSequence('navigate', ['↓', '→', 'p'])   // Use 'ArrowDown', 'ArrowRight' not unicode arrows
 isKeyPressed('ctrl')                      // Use 'Control' not 'ctrl'
 isKeyPressed('cmd')                       // Use 'Meta' not 'cmd'
 
 // ✅ CORRECT - These WILL work  
-holdSequence('jump', 'Space', 500)
-comboSequence('move', ['ArrowDown', 'ArrowRight', 'p'])
+holdSequence('scroll', 'Space', 500)
+comboSequence('navigate', ['ArrowDown', 'ArrowRight', 'p'])
 isKeyPressed('Control') 
 isKeyPressed('Meta')
 ```
@@ -26,8 +26,8 @@ Import the `Keys` constant for type safety and autocompletion:
 import { Keys, CommonSequences, holdSequence, comboSequence } from 'use-normalized-keys';
 
 // ✅ Type-safe with IntelliSense
-holdSequence('jump', Keys.SPACE, 500)
-comboSequence('hadouken', [...CommonSequences.HADOUKEN, Keys.p])
+holdSequence('scroll', Keys.SPACE, 500)
+comboSequence('format-text', [...CommonSequences.FORMAT_SHORTCUT, Keys.f])
 ```
 
 ## 📋 Complete Key Reference
@@ -138,36 +138,36 @@ Numpad keys depend on NumLock state:
 | Numpad 8 | `'8'` | Up Arrow | `'ArrowUp'` |
 | Numpad 9 | `'9'` | Page Up | `'PageUp'` |
 
-## 🎮 Gaming Examples
+## 🎨 Productivity Examples
 
-### Fighting Game Moves
+### Text Editor Shortcuts
 
 ```typescript
 import { Keys, CommonSequences, comboSequence } from 'use-normalized-keys';
 
-// ✅ Correct Street Fighter moves
-const moves = [
-  // Hadouken: ↓↘→ + punch
-  comboSequence('hadouken', [Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT, Keys.ARROW_RIGHT, Keys.p]),
+// ✅ Correct productivity shortcuts
+const shortcuts = [
+  // Vim escape sequence: j + k
+  comboSequence('vim-escape', [Keys.j, Keys.k]),
   
-  // Shoryuken: →↓↘ + punch  
-  comboSequence('shoryuken', [Keys.ARROW_RIGHT, Keys.ARROW_DOWN, Keys.ARROW_DOWN_RIGHT, Keys.p]),
+  // Quick formatting: Ctrl + Shift + F
+  comboSequence('format-document', [Keys.CONTROL, Keys.SHIFT, Keys.f]),
   
-  // Or use pre-defined sequences
-  comboSequence('hadouken-alt', [...CommonSequences.HADOUKEN, Keys.p])
+  // Or use pre-defined sequences for common patterns
+  comboSequence('emoji-shortcut', [...CommonSequences.COLON_WRAP, Keys.p, Keys.a, Keys.r, Keys.t, Keys.y])
 ];
 ```
 
-### WASD Movement
+### Arrow Key Navigation
 
 ```typescript
 import { Keys } from 'use-normalized-keys';
 
-// ✅ Correct WASD checks
-if (keys.isKeyPressed(Keys.W)) console.log('Moving forward');
-if (keys.isKeyPressed(Keys.A)) console.log('Moving left'); 
-if (keys.isKeyPressed(Keys.S)) console.log('Moving back');
-if (keys.isKeyPressed(Keys.D)) console.log('Moving right');
+// ✅ Correct navigation checks
+if (keys.isKeyPressed(Keys.ARROW_UP)) console.log('Navigate up');
+if (keys.isKeyPressed(Keys.ARROW_LEFT)) console.log('Navigate left'); 
+if (keys.isKeyPressed(Keys.ARROW_DOWN)) console.log('Navigate down');
+if (keys.isKeyPressed(Keys.ARROW_RIGHT)) console.log('Navigate right');
 ```
 
 ### Modifier Combinations  

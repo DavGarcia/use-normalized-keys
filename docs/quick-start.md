@@ -27,16 +27,16 @@ function MyComponent() {
 ```tsx
 import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
-function GameControls() {
+function KeyboardShortcuts() {
   const { isKeyPressed } = useNormalizedKeys();
   
   return (
     <div>
-      <h3>Movement Controls</h3>
-      <div>W (forward): {isKeyPressed(Keys.W) ? '🟢' : '🔴'}</div>
-      <div>A (left): {isKeyPressed(Keys.A) ? '🟢' : '🔴'}</div>
-      <div>S (backward): {isKeyPressed(Keys.S) ? '🟢' : '🔴'}</div>
-      <div>D (right): {isKeyPressed(Keys.D) ? '🟢' : '🔴'}</div>
+      <h3>Productivity Shortcuts</h3>
+      <div>Save (Ctrl+S): {isKeyPressed([Keys.CONTROL, Keys.S]) ? '🟢' : '🔴'}</div>
+      <div>Copy (Ctrl+C): {isKeyPressed([Keys.CONTROL, Keys.C]) ? '🟢' : '🔴'}</div>
+      <div>Paste (Ctrl+V): {isKeyPressed([Keys.CONTROL, Keys.V]) ? '🟢' : '🔴'}</div>
+      <div>Undo (Ctrl+Z): {isKeyPressed([Keys.CONTROL, Keys.Z]) ? '🟢' : '🔴'}</div>
     </div>
   );
 }
@@ -58,7 +58,7 @@ const { lastEvent, pressedKeys, isKeyPressed } = useNormalizedKeys({
 
 The new unified approach uses a Context Provider and single hook for maximum simplicity:
 
-### Hold Progress Tracking with Smooth Animations
+### Advanced Tool Switching with Hold Progress
 
 ```tsx
 import { 
@@ -68,33 +68,30 @@ import {
   Keys 
 } from 'use-normalized-keys';
 
-function ChargingAttack() {
-  // Single unified hook with all functionality
-  const charge = useHoldSequence('charge-attack');
+function ToolSelector() {
+  // Track tool switching progress
+  const toolSwitch = useHoldSequence('tool-switch');
   
   return (
-    <div style={{
-      transform: `scale(${charge.scale})`,
-      opacity: charge.opacity,
-      boxShadow: charge.glow > 0 ? `0 0 ${charge.glow * 20}px #4CAF50` : 'none'
-    }}>
-      <div>Charging: {charge.isHolding ? `${Math.round(charge.progress)}%` : 'Ready'}</div>
+    <div className="tool-selector">
+      <div>Current Tool: Brush</div>
+      <div>Hold Tab to switch: {toolSwitch.isHolding ? `${Math.round(toolSwitch.progress)}%` : 'Released'}</div>
       <div style={{
         width: '200px',
-        height: '20px',
-        background: '#ddd',
-        borderRadius: '10px'
+        height: '8px',
+        background: '#e2e8f0',
+        borderRadius: '4px',
+        overflow: 'hidden'
       }}>
         <div style={{
-          width: `${charge.progress}%`,
+          width: `${toolSwitch.progress}%`,
           height: '100%',
-          background: '#4CAF50',
-          borderRadius: '10px',
-          transition: 'none' // No CSS transitions needed - 60fps RAF animations!
+          background: '#3b82f6',
+          borderRadius: '4px',
+          transition: 'none' // Smooth 60fps RAF animations
         }}/>
       </div>
-      {charge.isReady && <div className="ready">READY!</div>}
-      <div>Time remaining: {charge.remainingTime}ms</div>
+      {toolSwitch.isReady && <div style={{ color: '#10b981' }}>Tool switched!</div>}
     </div>
   );
 }
@@ -103,16 +100,16 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-attack', Keys.SPACE, 1000) // Hold space for 1 second
+        holdSequence('tool-switch', Keys.TAB, 800) // Hold Tab for 800ms to switch tools
       ]}
     >
-      <ChargingAttack />
+      <ToolSelector />
     </NormalizedKeysProvider>
   );
 }
 ```
 
-### Game Character with Multiple Hold Sequences
+### Drawing Application with Multiple Hold Actions
 
 ```tsx
 import { 
@@ -123,28 +120,29 @@ import {
 } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
-function GameCharacter() {
-  const jump = useHoldSequence('charge-jump');
-  const attack = useHoldSequence('power-attack');
+function DrawingCanvas() {
+  const brushPressure = useHoldSequence('brush-pressure');
+  const panMode = useHoldSequence('pan-mode');
   
   // Trigger actions on sequence events
   useEffect(() => {
-    if (jump.justCompleted) {
-      console.log('Execute charge jump!');
+    if (brushPressure.justStarted) {
+      console.log('Start applying pressure to brush');
     }
-    if (attack.justStarted) {
-      console.log('Start charging power attack...');
+    if (brushPressure.justCompleted) {
+      console.log('Maximum brush pressure reached');
     }
-    if (attack.justCompleted) {
-      console.log('Execute power attack!');
+    if (panMode.justCompleted) {
+      console.log('Entering pan mode');
     }
-  }, [jump.justCompleted, attack.justStarted, attack.justCompleted]);
+  }, [brushPressure.justStarted, brushPressure.justCompleted, panMode.justCompleted]);
   
   return (
-    <div className="character">
-      <div>Charge Jump (Space): {Math.round(jump.progress)}%</div>
-      <div>Power Attack (F): {Math.round(attack.progress)}%</div>
-      {attack.isReady && <div>Power Attack READY!</div>}
+    <div className="drawing-canvas">
+      <div>Brush Pressure (Space): {Math.round(brushPressure.progress)}%</div>
+      <div>Pan Mode (H): {Math.round(panMode.progress)}%</div>
+      <div>Brush Size: {10 + (brushPressure.progress / 5)}px</div>
+      {panMode.isReady && <div style={{ color: '#10b981' }}>Pan Mode Active</div>}
     </div>
   );
 }
@@ -153,11 +151,11 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', Keys.SPACE, 500),
-        holdSequence('power-attack', Keys.F, 1000)
+        holdSequence('brush-pressure', Keys.SPACE, 100), // Quick pressure response
+        holdSequence('pan-mode', Keys.h, 800) // Hold H to activate pan mode
       ]}
     >
-      <GameCharacter />
+      <DrawingCanvas />
     </NormalizedKeysProvider>
   );
 }

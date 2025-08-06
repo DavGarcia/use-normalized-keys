@@ -1,58 +1,60 @@
 # useNormalizedKeys
 
-A React hook for normalized keyboard input handling, optimized for games and interactive applications with advanced features like sequence detection, tap/hold recognition, and cross-platform compatibility.
+A React hook for normalized keyboard input handling, designed for productivity applications, drawing tools, and professional interfaces with advanced features like sequence detection, tap/hold recognition, and cross-platform compatibility.
 
 ## What is useNormalizedKeys?
 
-useNormalizedKeys is a comprehensive React hook that provides consistent, feature-rich keyboard input handling across different browsers and platforms. It's designed for applications that require precise, real-time keyboard interaction like games, drawing applications, interactive creative tools, and productivity applications.
+useNormalizedKeys is a comprehensive React hook that provides consistent, feature-rich keyboard input handling across different browsers and platforms. It's designed for applications that require precise, real-time keyboard interaction like text editors, drawing applications, design tools, code editors, and professional productivity applications.
 
 ## Key Features
 
-- **⚡ Unified Hook API** - Single `useHoldSequence` hook with comprehensive functionality
-- **🚀 60fps Animations** - RequestAnimationFrame for perfectly smooth visual effects
+- **⚡ Professional Shortcuts** - Build keyboard-driven interfaces like Photoshop, Figma, VS Code
+- **🚀 Smooth Animations** - RequestAnimationFrame for perfectly fluid visual feedback
 - **🔄 Context Provider** - Simplified setup with automatic state management
-- **🌐 Cross-platform compatibility** - Handles Windows Shift+Numpad phantom events, macOS Meta key issues, and other platform-specific quirks
-- **🎮 Real-time performance** - Optimized for high-frequency input scenarios with minimal overhead
-- **🎹 Sequence detection** - Detect complex key sequences (Konami code, shortcuts, etc.) and chord combinations
-- **⏱️ Tap vs Hold detection** - Distinguish between quick taps and long holds with configurable thresholds
-- **🚫 preventDefault API** - Prevent browser shortcuts for specific keys or all keys
+- **🌐 Cross-platform compatibility** - Handles Windows, macOS, and Linux keyboard differences seamlessly
+- **🎨 Drawing Tools Ready** - Optimized for creative applications with pressure sensitivity and tool switching  
+- **🎹 Advanced Sequences** - Detect complex shortcuts (Ctrl+S), key sequences (jk), and chord combinations
+- **⏱️ Tap vs Hold detection** - Distinguish between quick taps and long holds for different actions
+- **🚫 Smart Prevention** - Block browser shortcuts selectively while respecting input fields
 - **🔤 Key normalization** - Consistent key names across different browsers and layouts
-- **📊 Rich event data** - Detailed information about timing, modifiers, numpad state, and more
-- **📝 TypeScript support** - Full type definitions with comprehensive IntelliSense
-- **🔧 Zero configuration** - Works out of the box with sensible defaults
+- **📊 Rich event data** - Detailed information about timing, modifiers, accessibility state, and more
+- **📝 TypeScript First** - Complete type definitions with excellent IntelliSense support
+- **🔧 Zero configuration** - Works out of the box with sensible defaults for professional use
 
 ## Quick Example
 
 ```tsx
 import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
-function GameComponent() {
+function TextEditor() {
   const keys = useNormalizedKeys({
-    sequences: {
-      sequences: [
-        { id: 'konami', keys: [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN], type: 'sequence' }
-      ],
-      onSequenceMatch: (match) => console.log(`${match.sequenceId} code entered!`)
+    sequences: [
+      { id: 'vim-escape', keys: [Keys.j, Keys.k], type: 'sequence' },
+      { id: 'save', keys: [Keys.CONTROL, Keys.s], type: 'chord' }
+    ],
+    onSequenceMatch: (match) => {
+      if (match.sequenceId === 'save') console.log('Document saved!');
+      if (match.sequenceId === 'vim-escape') console.log('Exit insert mode');
     },
-    preventDefault: true, // Prevent browser shortcuts
+    preventDefault: true, // Prevent browser shortcuts like Ctrl+S
     tapHoldThreshold: 150 // 150ms for tap vs hold
   });
   
   return (
     <div>
+      <textarea placeholder="Start typing..." />
       <p>Last key: {keys.lastEvent?.key} 
          {keys.lastEvent?.isTap && ' (tap)'} 
          {keys.lastEvent?.isHold && ' (hold)'}
       </p>
-      <p>Currently pressed: {Array.from(keys.pressedKeys).join(', ')}</p>
       
       <div>
-        <h3>WASD Movement</h3>
+        <h3>Productivity Shortcuts</h3>
         <ul>
-          <li>W (Up): {keys.isKeyPressed(Keys.w) ? '🟢' : '⚪'}</li>
-          <li>A (Left): {keys.isKeyPressed(Keys.a) ? '🟢' : '⚪'}</li>
-          <li>S (Down): {keys.isKeyPressed(Keys.s) ? '🟢' : '⚪'}</li>
-          <li>D (Right): {keys.isKeyPressed(Keys.d) ? '🟢' : '⚪'}</li>
+          <li>Save (Ctrl+S): {keys.isKeyPressed([Keys.CONTROL, Keys.s]) ? '🟢' : '⚪'}</li>
+          <li>Undo (Ctrl+Z): {keys.isKeyPressed([Keys.CONTROL, Keys.z]) ? '🟢' : '⚪'}</li>
+          <li>Copy (Ctrl+C): {keys.isKeyPressed([Keys.CONTROL, Keys.c]) ? '🟢' : '⚪'}</li>
+          <li>Paste (Ctrl+V): {keys.isKeyPressed([Keys.CONTROL, Keys.v]) ? '🟢' : '⚪'}</li>
         </ul>
       </div>
       
@@ -64,7 +66,7 @@ function GameComponent() {
       
       {keys.sequences?.matches.length > 0 && (
         <div>
-          <h3>Sequences Detected</h3>
+          <h3>Shortcuts Detected</h3>
           {keys.sequences.matches.map(match => (
             <p key={match.sequenceId}>✨ {match.sequenceId}</p>
           ))}
@@ -84,22 +86,28 @@ import {
   NormalizedKeysProvider, 
   useHoldSequence, 
   holdSequence,
+  chordSequence,
   Keys 
 } from 'use-normalized-keys';
 
-function PowerAttack() {
-  // Single unified hook with all functionality
-  const powerAttack = useHoldSequence('power-attack');
+function BrushTool() {
+  // Single unified hook for brush pressure sensitivity
+  const brushPressure = useHoldSequence('brush-pressure');
   
   return (
-    <div style={{
-      transform: `scale(${powerAttack.scale})`,
-      opacity: powerAttack.opacity,
-      boxShadow: powerAttack.glow > 0 ? `0 0 ${powerAttack.glow * 20}px #ff6b35` : 'none'
-    }}>
-      <div>Progress: {Math.round(powerAttack.progress)}%</div>
-      <div>Time: {powerAttack.remainingTime}ms remaining</div>
-      {powerAttack.isReady && <div className="ready">READY!</div>}
+    <div className="brush-tool">
+      <div 
+        className="brush-preview"
+        style={{
+          transform: `scale(${1 + brushPressure.progress / 200})`,
+          opacity: 0.5 + brushPressure.progress / 200,
+          boxShadow: brushPressure.glow > 0 ? `0 0 ${brushPressure.glow * 10}px #3b82f6` : 'none'
+        }}
+      >
+        <div>Brush Size: {Math.round(10 + brushPressure.progress / 10)}px</div>
+        <div>Pressure: {Math.round(brushPressure.progress)}%</div>
+        {brushPressure.isCharging && <div className="charging">Hold Space for pressure</div>}
+      </div>
     </div>
   );
 }
@@ -108,10 +116,17 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-attack', Keys.q, 1000, { name: 'Power Attack' })
+        // Pressure sensitivity for brush
+        holdSequence('brush-pressure', Keys.SPACE, 100, { 
+          name: 'Brush Pressure', 
+          continuous: true 
+        }),
+        // Standard shortcuts
+        chordSequence('save', [Keys.CONTROL, Keys.s], { name: 'Save Project' }),
+        chordSequence('undo', [Keys.CONTROL, Keys.z], { name: 'Undo' })
       ]}
     >
-      <PowerAttack />
+      <BrushTool />
     </NormalizedKeysProvider>
   );
 }

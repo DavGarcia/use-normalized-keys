@@ -4,21 +4,21 @@
 [![CI Status](https://github.com/DavGarcia/use-normalized-keys/workflows/CI/badge.svg)](https://github.com/DavGarcia/use-normalized-keys/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A professional React hook for normalized keyboard input handling, optimized for games and interactive applications.
+A professional React hook for normalized keyboard input handling, designed for productivity applications, drawing tools, and professional interfaces.
 
 ## ✨ Features
 
-- **⚡ Unified Hook API** - Single `useHoldSequence` hook replaces multiple specialized hooks
-- **🚀 60fps Animations** - RequestAnimationFrame for perfectly smooth visual effects
-- **🎮 Gaming-Optimized** - Built for games with high-frequency input and real-time feedback
-- **🌐 Cross-Platform** - Handles Windows Shift+Numpad phantom events, macOS Meta key issues, and platform quirks
+- **⚡ Professional Shortcuts** - Build keyboard-driven interfaces like Photoshop, Figma, VS Code
+- **🚀 60fps Animations** - RequestAnimationFrame for perfectly smooth visual feedback  
+- **🎨 Drawing Tools Ready** - Optimized for creative applications with pressure sensitivity and tool switching
+- **🌐 Cross-Platform** - Handles Windows, macOS, and Linux keyboard differences seamlessly
 - **🔄 Context Provider** - Simplified setup with automatic state management
-- **🎹 Sequence Detection** - Detect key sequences (Konami code), chords (Ctrl+S), and hold patterns
+- **🎹 Advanced Sequences** - Detect shortcuts (Ctrl+S), key sequences (jk), and hold patterns
 - **⏱️ Tap vs Hold** - Distinguish between quick taps and long holds with configurable thresholds
-- **🚫 preventDefault API** - Block browser shortcuts selectively or globally
-- **🔤 Key Normalization** - Consistent key names across browsers and keyboard layouts
-- **📊 Rich Event Data** - Detailed timing, modifiers, numpad state, and duration information
-- **📝 TypeScript Ready** - Full type definitions with comprehensive IntelliSense
+- **🚫 Smart Prevention** - Block browser shortcuts selectively while respecting input fields
+- **🔤 Key Normalization** - Consistent key names across browsers and keyboard layouts  
+- **📊 Rich Event Data** - Detailed timing, modifiers, and accessibility information
+- **📝 TypeScript First** - Complete type definitions with excellent IntelliSense support
 
 ## 📦 Installation
 
@@ -28,39 +28,58 @@ npm install use-normalized-keys
 
 ## 🚀 Quick Start
 
-### Basic Key Detection
+### Basic Productivity Shortcuts
 
 ```tsx
 import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
-function App() {
+function TextEditor() {
   const keys = useNormalizedKeys();
+  
+  React.useEffect(() => {
+    // Handle Ctrl+S (Save)
+    if (keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.s)) {
+      console.log('Save document');
+    }
+    
+    // Handle Ctrl+Z (Undo)  
+    if (keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.z)) {
+      console.log('Undo last action');
+    }
+    
+    // Handle Ctrl+Shift+Z (Redo)
+    if (keys.activeModifiers.ctrl && keys.activeModifiers.shift && keys.isKeyPressed(Keys.z)) {
+      console.log('Redo action');
+    }
+  }, [keys.isKeyPressed, keys.activeModifiers]);
   
   return (
     <div>
+      <textarea placeholder="Start typing..." />
+      <p>Last key: {keys.lastEvent?.key || 'None'}</p>
       <p>Pressed keys: {Array.from(keys.pressedKeys).join(', ')}</p>
-      <p>Space pressed: {keys.isKeyPressed(Keys.SPACE) ? 'Yes' : 'No'}</p>
-      <p>Last key: {keys.lastEvent?.key} {keys.lastEvent?.isTap && '(tap)'}</p>
     </div>
   );
 }
 ```
 
-### With Context Provider & Hold Sequences
+### Drawing Tool with Pressure Sensitivity
 
 ```tsx
-import { NormalizedKeysProvider, useHoldSequence, holdSequence, Keys } from 'use-normalized-keys';
+import { NormalizedKeysProvider, useHoldSequence, holdSequence, chordSequence, Keys } from 'use-normalized-keys';
 
-function ChargeButton() {
-  const charge = useHoldSequence('power-charge');
+function DrawingCanvas() {
+  const brushPressure = useHoldSequence('brush-pressure');
   
   return (
-    <div style={{ 
-      transform: `scale(${charge.scale})`,
-      opacity: charge.opacity 
-    }}>
-      Progress: {Math.round(charge.progress)}%
-      {charge.isReady && <span> READY!</span>}
+    <div className="canvas">
+      <div className="brush-preview" style={{ 
+        transform: `scale(${1 + brushPressure.progress / 200})`,
+        opacity: 0.5 + brushPressure.progress / 200 
+      }}>
+        Brush Size: {Math.round(10 + brushPressure.progress / 10)}px
+        {brushPressure.isCharging && <span> (Hold Space for pressure)</span>}
+      </div>
     </div>
   );
 }
@@ -69,10 +88,14 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-charge', Keys.SPACE, 1000)
+        // Pressure sensitivity
+        holdSequence('brush-pressure', Keys.SPACE, 100, { continuous: true }),
+        // Standard shortcuts  
+        chordSequence('save', [Keys.CONTROL, Keys.s], { name: 'Save' }),
+        chordSequence('undo', [Keys.CONTROL, Keys.z], { name: 'Undo' })
       ]}
     >
-      <ChargeButton />
+      <DrawingCanvas />
     </NormalizedKeysProvider>
   );
 }
@@ -109,27 +132,25 @@ if (keys.activeModifiers.shift) runFaster();
 
 ```tsx
 const keys = useNormalizedKeys({
-  sequences: {
-    sequences: [
-      {
-        id: 'konami',
-        keys: [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a],
-        type: 'sequence'
-      },
-      {
-        id: 'save',
-        keys: [Keys.CONTROL, Keys.s],
-        type: 'chord'
-      },
-      {
-        id: 'charge-jump',
-        keys: [{ key: Keys.SPACE, minHoldTime: 750 }],
-        type: 'hold'
-      }
-    ],
-    onSequenceMatch: (match) => {
-      console.log(`Sequence ${match.sequenceId} detected!`);
+  sequences: [
+    {
+      id: 'konami',
+      keys: [Keys.ARROW_UP, Keys.ARROW_UP, Keys.ARROW_DOWN, Keys.ARROW_DOWN, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.ARROW_LEFT, Keys.ARROW_RIGHT, Keys.b, Keys.a],
+      type: 'sequence'
+    },
+    {
+      id: 'save',
+      keys: [Keys.CONTROL, Keys.s],
+      type: 'chord'
+    },
+    {
+      id: 'charge-jump',
+      keys: [{ key: Keys.SPACE, minHoldTime: 750 }],
+      type: 'hold'
     }
+  ],
+  onSequenceMatch: (match) => {
+    console.log(`Sequence ${match.sequenceId} detected!`);
   }
 });
 ```
@@ -140,32 +161,30 @@ Hold detection allows you to trigger events when a key is held for a specific du
 
 ```tsx
 const keys = useNormalizedKeys({
-  sequences: {
-    sequences: [
-      // Simple hold - fires after holding space for 500ms
-      {
-        id: 'charge-jump',
-        name: 'Charge Jump',
-        keys: [{ key: Keys.SPACE, minHoldTime: 500 }],
-        type: 'hold'
-      },
-      // Hold with modifiers
-      {
-        id: 'special-move',
-        name: 'Special Move',
-        keys: [{ 
-          key: Keys.s, 
-          minHoldTime: 600,
-          modifiers: { ctrl: true }
-        }],
-        type: 'hold'
-      }
-    ],
-    onSequenceMatch: (match) => {
-      if (match.type === 'hold') {
-        console.log(`Hold detected: ${match.sequenceId}`);
-        // Fires DURING the hold, not on release
-      }
+  sequences: [
+    // Simple hold - fires after holding space for 500ms
+    {
+      id: 'charge-jump',
+      name: 'Charge Jump',
+      keys: [{ key: Keys.SPACE, minHoldTime: 500 }],
+      type: 'hold'
+    },
+    // Hold with modifiers
+    {
+      id: 'special-move',
+      name: 'Special Move',
+      keys: [{ 
+        key: Keys.s, 
+        minHoldTime: 600,
+        modifiers: { ctrl: true }
+      }],
+      type: 'hold'
+    }
+  ],
+  onSequenceMatch: (match) => {
+    if (match.type === 'hold') {
+      console.log(`Hold detected: ${match.sequenceId}`);
+      // Fires DURING the hold, not on release
     }
   }
 });
@@ -223,14 +242,12 @@ function GameComponent() {
   const keys = useNormalizedKeys({
     preventDefault: true,
     tapHoldThreshold: 150,
-    sequences: {
-      sequences: [
-        { id: 'special-move', keys: [Keys.a, Keys.s, Keys.d, Keys.f], type: 'sequence' }
-      ],
-      onSequenceMatch: (match) => {
-        if (match.sequenceId === 'special-move') {
-          executeSpecialMove();
-        }
+    sequences: [
+      { id: 'special-move', keys: [Keys.a, Keys.s, Keys.d, Keys.f], type: 'sequence' }
+    ],
+    onSequenceMatch: (match) => {
+      if (match.sequenceId === 'special-move') {
+        executeSpecialMove();
       }
     }
   });
@@ -401,7 +418,7 @@ const sequences = [
 
 function GameComponent() {
   const keys = useNormalizedKeys({
-    sequences: { sequences }
+    sequences
   });
   // ... rest of component
 }

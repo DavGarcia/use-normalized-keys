@@ -565,17 +565,15 @@ describe('useNormalizedKeys - Integration Tests', () => {
       const matchedSequences: any[] = [];
       
       const { result } = renderHook(() => useNormalizedKeys({
-        sequences: {
-          sequences: [
-            {
-              id: 'hello',
-              keys: ['h', 'e', 'l', 'l', 'o'],
-              type: 'sequence' as const
-            }
-          ],
-          onSequenceMatch: (match) => {
-            matchedSequences.push(match);
+        sequences: [
+          {
+            id: 'hello',
+            keys: ['h', 'e', 'l', 'l', 'o'],
+            type: 'sequence' as const
           }
+        ],
+        onSequenceMatch: (match) => {
+          matchedSequences.push(match);
         }
       }));
       
@@ -603,19 +601,16 @@ describe('useNormalizedKeys - Integration Tests', () => {
       
       const { result } = renderHook(() => useNormalizedKeys({
         debug: true,  // Hook-level debug
-        sequences: {
-          sequences: [
-            {
-              id: 'jk',
-              keys: ['j', 'k'],
-              type: 'sequence' as const
-            }
-          ],
-          onSequenceMatch: (match) => {
-            console.log('MATCH DETECTED:', match);
-            matchedSequences.push(match);
-          },
-          debug: true  // Sequence-level debug  
+        sequences: [
+          {
+            id: 'jk',
+            keys: ['j', 'k'],
+            type: 'sequence' as const
+          }
+        ],
+        onSequenceMatch: (match) => {
+          console.log('MATCH DETECTED:', match);
+          matchedSequences.push(match);
         }
       }));
       

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { 
   normalizeKey, 
   normalizeKeyCode, 
@@ -94,7 +94,8 @@ export interface UseNormalizedKeysOptions {
   debug?: boolean;
   excludeInputFields?: boolean; // Option to disable input field exclusion
   tapHoldThreshold?: number; // Threshold in ms for tap vs hold detection (default: 200)
-  sequences?: SequenceOptions; // Sequence detection configuration
+  sequences?: SequenceDefinition[]; // Array of sequence definitions
+  onSequenceMatch?: (match: MatchedSequence) => void; // Callback when sequences are matched
   preventDefault?: boolean | string[]; // Prevent default for all keys (true) or specific combinations
 }
 
@@ -252,7 +253,8 @@ function shouldPreventDefault(
  * 
  * // Or direct usage (advanced)
  * const keys = useNormalizedKeys({
- *   sequences: { sequences: [holdSequence('power', 'f', 1000)] },
+ *   sequences: [holdSequence('power', 'f', 1000)],
+ *   onSequenceMatch: (match) => console.log('Sequence matched:', match.sequenceId),
  *   preventDefault: true
  * });
  * ```
@@ -271,6 +273,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     excludeInputFields = true,
     tapHoldThreshold = 200,
     sequences,
+    onSequenceMatch,
     preventDefault
   } = options;
   
@@ -278,8 +281,13 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
   const keyStatesRef = useRef<Map<string, KeyState>>(new Map());
   const debugCountersRef = useRef({ events: 0, suppressed: 0, quirksHandled: 0 });
   const platformQuirksRef = useRef(createPlatformQuirkState());
+  
   const sequenceStateRef = useRef<SequenceState | null>(
-    sequences ? createSequenceState({ ...sequences, debug }) : null
+    sequences ? createSequenceState({
+      sequences,
+      ...(onSequenceMatch && { onSequenceMatch }),
+      debug
+    }) : null
   );
   const sequencesClearedRef = useRef(false);
   
@@ -618,8 +626,9 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     
     if (!sequenceStateRef.current) {
       sequenceStateRef.current = createSequenceState({
-        ...sequences,
-        sequences: [definition]
+        sequences: [definition],
+        ...(onSequenceMatch && { onSequenceMatch }),
+        debug
       });
     } else {
       const currentSequences = sequenceStateRef.current.options.sequences || [];
@@ -631,7 +640,7 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
     if (debug) {
       console.log('[useNormalizedKeys] Added sequence:', definition.id);
     }
-  }, [sequences, debug]);
+  }, [onSequenceMatch, debug]);
 
   const removeSequence = useCallback((id: string) => {
     if (!sequenceStateRef.current) return;
@@ -681,9 +690,13 @@ export function useNormalizedKeys(options: UseNormalizedKeysOptions = {}): Norma
   // Update sequence options when they change
   useEffect(() => {
     if (sequences && sequenceStateRef.current && !sequencesClearedRef.current) {
-      updateSequenceOptions(sequenceStateRef.current, sequences);
+      updateSequenceOptions(sequenceStateRef.current, {
+        sequences,
+        ...(onSequenceMatch && { onSequenceMatch }),
+        debug
+      });
     }
-  }, [sequences]);
+  }, [sequences, onSequenceMatch, debug]);
 
   // Store ref to currentHolds for interval access
   const currentHoldsRef = useRef<CurrentHolds>(currentHolds);

@@ -771,7 +771,7 @@ export function updateSequenceOptions(
   
   // Reset state only if sequences actually changed (deep comparison)
   if (newOptions.sequences !== undefined) {
-    const oldSequences = oldOptions.sequences || [];
+    const oldSequences = Array.isArray(oldOptions.sequences) ? oldOptions.sequences : [];
     const newSequences = newOptions.sequences;
     
     // Check if sequences actually changed by comparing length and IDs

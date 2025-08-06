@@ -102,13 +102,6 @@ export function NormalizedKeysProvider({
   tapHoldThreshold,
   preventDefault
 }: NormalizedKeysProviderProps): JSX.Element {
-  // Convert clean props to useNormalizedKeys format
-  const sequenceOptions = sequences ? {
-    sequences,
-    ...(onSequenceMatch && { onSequenceMatch }),
-    ...(debug !== undefined && { debug })
-  } : undefined;
-
   // Create single instance of useNormalizedKeys
   const normalizedKeysState = useNormalizedKeys({
     enabled,
@@ -116,7 +109,8 @@ export function NormalizedKeysProvider({
     excludeInputFields,
     tapHoldThreshold,
     preventDefault,
-    sequences: sequenceOptions
+    sequences,
+    onSequenceMatch
   });
 
   return (

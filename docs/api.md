@@ -6,14 +6,14 @@ Before using any APIs, understand how key names work to avoid common mistakes:
 
 ```typescript
 // ❌ WRONG - These will NOT work
-holdSequence('jump', ' ', 500)           // Use 'Space' not ' '
-comboSequence('move', ['↓', '→', 'p'])   // Use 'ArrowDown', 'ArrowRight' not unicode
+holdSequence('scroll', ' ', 500)         // Use 'Space' not ' '
+comboSequence('navigate', ['↓', '→', 'p'])   // Use 'ArrowDown', 'ArrowRight' not unicode
 isKeyPressed('ctrl')                      // Use 'Control' not 'ctrl'
 
 // ✅ CORRECT - These WILL work  
 import { Keys } from 'use-normalized-keys';
-holdSequence('jump', Keys.SPACE, 500)    // Type-safe with IntelliSense
-comboSequence('move', [Keys.ARROW_DOWN, Keys.ARROW_RIGHT, Keys.p])
+holdSequence('scroll', Keys.SPACE, 500)    // Type-safe with IntelliSense
+comboSequence('navigate', [Keys.ARROW_DOWN, Keys.ARROW_RIGHT, Keys.p])
 isKeyPressed(Keys.CONTROL)
 ```
 
@@ -279,31 +279,29 @@ const keys = useNormalizedKeys({
 
 ### Sequence Detection
 
-Detect complex key patterns like combos, chords, and hold sequences for advanced game mechanics and keyboard shortcuts.
+Detect complex key patterns like sequences, chords, and hold patterns for advanced keyboard shortcuts and productivity workflows.
 
 ```tsx
 const keys = useNormalizedKeys({
-  sequences: {
-    sequences: [
-      {
-        id: 'konami',
-        keys: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'],
-        type: 'sequence'
-      },
-      {
-        id: 'ctrl-s',
-        keys: ['Control', 's'],
-        type: 'chord'
-      },
-      {
-        id: 'charge-jump',
-        keys: [{ key: 'Space', minHoldTime: 500 }],
-        type: 'hold'
-      }
-    ],
-    onSequenceMatch: (match) => {
-      console.log(`Sequence ${match.sequenceId} matched!`);
+  sequences: [
+    {
+      id: 'vim-escape',
+      keys: ['j', 'k'],
+      type: 'sequence'
+    },
+    {
+      id: 'ctrl-s',
+      keys: ['Control', 's'],
+      type: 'chord'
+    },
+    {
+      id: 'scroll-acceleration',
+      keys: [{ key: 'Space', minHoldTime: 500 }],
+      type: 'hold'
     }
+  ],
+  onSequenceMatch: (match) => {
+    console.log(`Shortcut ${match.sequenceId} activated!`);
   }
 });
 
@@ -317,33 +315,32 @@ Hold detection fires events when a key is held for a specified duration. Unlike 
 
 ```tsx
 const keys = useNormalizedKeys({
-  sequences: {
-    sequences: [
-      // Basic hold - fires after 500ms while space is still pressed
-      {
-        id: 'charge-jump',
-        name: 'Charge Jump',
-        keys: [{ key: 'Space', minHoldTime: 500 }],
-        type: 'hold'
-      },
-      // Hold with modifiers
-      {
-        id: 'power-attack',
-        name: 'Power Attack',
-        keys: [{ 
-          key: 'f', 
-          minHoldTime: 1000,
-          modifiers: { shift: true }
-        }],
-        type: 'hold'
-      }
-    ],
-    onSequenceMatch: (match) => {
-      if (match.type === 'hold') {
-        console.log(`Hold activated: ${match.sequenceId}`);
-        // This fires DURING the hold, after minHoldTime
-      }
+  sequences: [
+    // Basic hold - fires after 500ms while space is still pressed
+    {
+      id: 'scroll-boost',
+      name: 'Scroll Boost',
+      keys: [{ key: 'Space', minHoldTime: 500 }],
+      type: 'hold'
+    },
+    // Hold with modifiers for text formatting
+    {
+      id: 'format-text',
+      name: 'Format Text',
+      keys: [{ 
+        key: 'f', 
+        minHoldTime: 1000,
+        modifiers: { shift: true }
+      }],
+      type: 'hold'
     }
+  ],
+  onSequenceMatch: (match) => {
+    if (match.type === 'hold') {
+      console.log(`Hold activated: ${match.sequenceId}`);
+      // This fires DURING the hold, after minHoldTime
+    }
+  }
   }
 });
 ```
@@ -392,40 +389,41 @@ useEffect(() => {
 }, [keys.lastEvent]);
 ```
 
-### Game Input Handling
+### Continuous Input Handling
 
-Handle continuous input for game mechanics like WASD movement with automatic focus management and browser shortcut prevention.
+Handle continuous keyboard input for smooth navigation and editing with automatic focus management and browser shortcut prevention.
 
 ```tsx
-function GameComponent() {
+function TextEditorComponent() {
   const keys = useNormalizedKeys({
     excludeInputFields: true,
-    preventDefault: true, // Prevent all browser shortcuts
+    preventDefault: ['Tab', 'F5'], // Prevent specific shortcuts
   });
 
   useEffect(() => {
-    const handleMovement = () => {
-      const movement = {
-        x: 0,
-        y: 0
+    const handleNavigation = () => {
+      const navigation = {
+        horizontal: 0,
+        vertical: 0
       };
 
-      if (keys.isKeyPressed('w') || keys.isKeyPressed('ArrowUp')) movement.y -= 1;
-      if (keys.isKeyPressed('s') || keys.isKeyPressed('ArrowDown')) movement.y += 1;
-      if (keys.isKeyPressed('a') || keys.isKeyPressed('ArrowLeft')) movement.x -= 1;
-      if (keys.isKeyPressed('d') || keys.isKeyPressed('ArrowRight')) movement.x += 1;
+      // Cursor navigation
+      if (keys.isKeyPressed('ArrowUp')) navigation.vertical -= 1;
+      if (keys.isKeyPressed('ArrowDown')) navigation.vertical += 1;
+      if (keys.isKeyPressed('ArrowLeft')) navigation.horizontal -= 1;
+      if (keys.isKeyPressed('ArrowRight')) navigation.horizontal += 1;
 
-      // Apply movement
-      updatePlayerPosition(movement);
+      // Apply cursor movement
+      updateCursorPosition(navigation);
     };
 
-    const gameLoop = setInterval(handleMovement, 16); // 60 FPS
-    return () => clearInterval(gameLoop);
+    const editorLoop = setInterval(handleNavigation, 16); // 60 FPS
+    return () => clearInterval(editorLoop);
   }, [keys]);
 
   return (
     <div>
-      <p>Use WASD or arrow keys to move</p>
+      <p>Use arrow keys to navigate</p>
       <p>Active keys: {Array.from(keys.pressedKeys).join(', ')}</p>
     </div>
   );
@@ -437,10 +435,10 @@ function GameComponent() {
 Temporarily disable keyboard event processing while preserving hook state and configuration.
 
 ```tsx
-const [gameActive, setGameActive] = useState(true);
-const keys = useNormalizedKeys({ enabled: gameActive });
+const [editorActive, setEditorActive] = useState(true);
+const keys = useNormalizedKeys({ enabled: editorActive });
 
-// Hook will not respond to keyboard events when gameActive is false
+// Hook will not respond to keyboard events when editorActive is false
 ```
 
 ## Context Provider API
@@ -477,14 +475,14 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-attack', 'f', 1000),
-        holdSequence('shield', 's', 500)
+        holdSequence('brush-pressure', 'Space', 1000),
+        holdSequence('pan-mode', 'h', 500)
       ]}
       debug={true}
       tapHoldThreshold={200}
       preventDefault={['Tab', 'F5']}
     >
-      <GameComponent />
+      <DrawingToolsComponent />
     </NormalizedKeysProvider>
   );
 }
@@ -494,7 +492,7 @@ function App() {
 
 ### useHoldSequence
 
-The all-in-one unified hook that combines progress tracking, smooth 60fps animations, and game events into a single optimized hook.
+The all-in-one unified hook that combines progress tracking, smooth 60fps animations, and interaction events into a single optimized hook.
 
 #### Signature
 
@@ -528,7 +526,7 @@ interface UseHoldSequenceResult {
   isReady: boolean;             // At 90%+ progress
   isAnimating: boolean;         // Animation active
   
-  // Game Event Flags 
+  // Event Flags 
   justStarted: boolean;         // Just started (100ms window)
   justCompleted: boolean;       // Just completed (100ms window)
   justCancelled: boolean;       // Just cancelled (100ms window)
@@ -554,7 +552,7 @@ interface UseHoldSequenceResult {
 - **🚀 60fps Animations**: Uses requestAnimationFrame for perfectly smooth visual effects
 - **⚡ Single Hook**: Combines progress tracking, animation, and sequence detection
 - **🎯 Real-time Properties**: Progress, timing, animation values, and event flags
-- **🎮 Game-Optimized**: Built for responsive game mechanics
+- **🎨 Interface-Optimized**: Built for responsive drawing tools and professional interfaces
 - **📊 Complete API**: Everything you need in one optimized hook
 
 #### Example
@@ -567,40 +565,41 @@ import {
 } from 'use-normalized-keys';
 import { useEffect } from 'react';
 
-function PowerAttackButton() {
-  const powerAttack = useHoldSequence('power-attack');
+function BrushPressureIndicator() {
+  const brushPressure = useHoldSequence('brush-pressure');
   
   // Trigger actions on sequence events
   useEffect(() => {
-    if (powerAttack.justStarted) {
-      showChargingEffect();
+    if (brushPressure.justStarted) {
+      showPressureFeedback();
     }
-    if (powerAttack.justCompleted) {
-      executePowerAttack();
+    if (brushPressure.justCompleted) {
+      applyMaximumPressure();
     }
-    if (powerAttack.justCancelled) {
-      hideChargingEffect();
+    if (brushPressure.justCancelled) {
+      resetBrushPressure();
     }
-  }, [powerAttack.justStarted, powerAttack.justCompleted, powerAttack.justCancelled]);
+  }, [brushPressure.justStarted, brushPressure.justCompleted, brushPressure.justCancelled]);
   
   return (
     <div 
-      className="power-button"
+      className="pressure-indicator"
       style={{
-        transform: `scale(${powerAttack.scale})`,
-        opacity: powerAttack.opacity,
-        boxShadow: powerAttack.glow > 0 ? `0 0 ${powerAttack.glow * 20}px #ff6b35` : 'none',
-        marginLeft: `${powerAttack.shake}px`
+        transform: `scale(${brushPressure.scale})`,
+        opacity: brushPressure.opacity,
+        boxShadow: brushPressure.glow > 0 ? `0 0 ${brushPressure.glow * 20}px #3b82f6` : 'none',
+        marginLeft: `${brushPressure.shake}px`
       }}
     >
       <div 
         className="progress-bar"
-        style={{ width: `${powerAttack.progress}%` }}
+        style={{ width: `${brushPressure.progress}%` }}
       />
-      <div>Progress: {Math.round(powerAttack.progress)}%</div>
-      <div>Time: {powerAttack.remainingTime}ms remaining</div>
-      {powerAttack.isReady && <div className="ready">READY!</div>}
-      {powerAttack.isCharging && <div>Charging Power Attack...</div>}
+      <div>Pressure: {Math.round(brushPressure.progress)}%</div>
+      <div>Time: {brushPressure.remainingTime}ms remaining</div>
+      <div>Brush Size: {Math.round(10 + brushPressure.progress / 10)}px</div>
+      {brushPressure.isReady && <div className="ready">MAX PRESSURE!</div>}
+      {brushPressure.isCharging && <div>Building pressure...</div>}
     </div>
   );
 }
@@ -609,56 +608,57 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' })
+        holdSequence('brush-pressure', 'Space', 1000, { name: 'Brush Pressure' })
       ]}
     >
-      <PowerAttackButton />
+      <BrushPressureIndicator />
     </NormalizedKeysProvider>
   );
 }
 ```
 
-#### Game Character with Multiple Sequences
+#### Drawing Tools with Multiple Sequences
 
 ```tsx
-function GameCharacter() {
-  const chargeJump = useHoldSequence('charge-jump');
-  const powerAttack = useHoldSequence('power-attack');
-  const shield = useHoldSequence('shield');
+function DrawingToolInterface() {
+  const brushPressure = useHoldSequence('brush-pressure');
+  const panMode = useHoldSequence('pan-mode');
+  const eyedropper = useHoldSequence('eyedropper');
   
   // Trigger actions on sequence events
   useEffect(() => {
-    if (chargeJump.justCompleted) {
-      executeChargeJump();
+    if (brushPressure.justCompleted) {
+      applyMaximumBrushPressure();
     }
-    if (powerAttack.justStarted) {
-      showChargingEffect();
+    if (panMode.justStarted) {
+      activatePanMode();
     }
-    if (shield.justCancelled) {
-      hideShield();
+    if (eyedropper.justCancelled) {
+      deactivateEyedropper();
     }
   }, [
-    chargeJump.justCompleted, 
-    powerAttack.justStarted, 
-    shield.justCancelled
+    brushPressure.justCompleted, 
+    panMode.justStarted, 
+    eyedropper.justCancelled
   ]);
   
   return (
-    <div className="character">
-      <div className="abilities">
-        <div className="ability charge-jump">
-          <div>Charge Jump: {Math.round(chargeJump.progress)}%</div>
-          {chargeJump.isCharging && <div>Hold Space to charge...</div>}
+    <div className="drawing-interface">
+      <div className="tools">
+        <div className="tool brush-pressure">
+          <div>Brush Pressure: {Math.round(brushPressure.progress)}%</div>
+          <div>Size: {Math.round(10 + brushPressure.progress / 10)}px</div>
+          {brushPressure.isCharging && <div>Hold Space to build pressure...</div>}
         </div>
         
-        <div className="ability power-attack">
-          <div>Power Attack: {Math.round(powerAttack.progress)}%</div>
-          {powerAttack.isReady && <div className="ready">READY!</div>}
+        <div className="tool pan-mode">
+          <div>Pan Mode: {Math.round(panMode.progress)}%</div>
+          {panMode.isReady && <div className="ready">PANNING ACTIVE!</div>}
         </div>
         
-        <div className="ability shield">
-          <div>Shield: {shield.isHolding ? 'ACTIVE' : 'Ready'}</div>
-          <div>Duration: {shield.elapsedTime}ms</div>
+        <div className="tool eyedropper">
+          <div>Eyedropper: {eyedropper.isHolding ? 'SAMPLING' : 'Ready'}</div>
+          <div>Precision: {eyedropper.elapsedTime}ms</div>
         </div>
       </div>
     </div>
@@ -669,12 +669,12 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
-        holdSequence('power-attack', 'f', 1000, { name: 'Power Attack' }),
-        holdSequence('shield', 's', 500, { name: 'Shield' })
+        holdSequence('brush-pressure', 'Space', 750, { name: 'Brush Pressure' }),
+        holdSequence('pan-mode', 'h', 1000, { name: 'Pan Mode' }),
+        holdSequence('eyedropper', 'i', 500, { name: 'Eyedropper' })
       ]}
     >
-      <GameCharacter />
+      <DrawingToolInterface />
     </NormalizedKeysProvider>
   );
 }
@@ -711,19 +711,19 @@ function holdSequence(
 import { holdSequence, useNormalizedKeys } from 'use-normalized-keys';
 
 const sequences = [
-  holdSequence('charge-jump', 'Space', 750, { name: 'Charge Jump' }),
-  holdSequence('power-attack', 'f', 1000, { 
-    name: 'Power Attack',
+  holdSequence('scroll-boost', 'Space', 750, { name: 'Scroll Boost' }),
+  holdSequence('format-text', 'f', 1000, { 
+    name: 'Format Text',
     modifiers: { ctrl: true }
   })
 ];
 
-const keys = useNormalizedKeys({ sequences: { sequences } });
+const keys = useNormalizedKeys({ sequences });
 ```
 
 ### comboSequence
 
-Creates a sequential combo definition where keys must be pressed in order.
+Creates a sequential key sequence definition where keys must be pressed in order.
 
 #### Signature
 
@@ -746,12 +746,12 @@ function comboSequence(
 ```tsx
 import { comboSequence, Keys, CommonSequences } from 'use-normalized-keys';
 
-const combos = [
-  comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']),
+const sequences = [
+  comboSequence('vim-escape', ['j', 'k'], { timeout: 300, name: 'Vim Escape' }),
   // ✅ Use proper normalized key names, not unicode arrows
-  comboSequence('hadouken', ['ArrowDown', 'ArrowRight', 'p'], { timeout: 500 }),
-  // 💡 Or use pre-defined sequences for common moves
-  comboSequence('hadouken-alt', [...CommonSequences.HADOUKEN, Keys.p], { timeout: 500 })
+  comboSequence('emoji-shortcut', [':', 'p', 'a', 'r', 't', 'y', ':'], { timeout: 1000 }),
+  // 💡 Or use pre-defined sequences for common shortcuts
+  comboSequence('quick-format', [...CommonSequences.FORMAT_SHORTCUT, Keys.f], { timeout: 500 })
 ];
 ```
 

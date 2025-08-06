@@ -1,6 +1,6 @@
 # use-normalized-keys
 
-A professional React hook for normalized keyboard input handling, optimized for games and interactive applications.
+A professional React hook for normalized keyboard input handling, designed for productivity applications, drawing tools, and professional interfaces.
 
 [![npm version](https://img.shields.io/npm/v/use-normalized-keys.svg)](https://www.npmjs.com/package/use-normalized-keys)
 [![CI Status](https://github.com/DavGarcia/use-normalized-keys/workflows/CI/badge.svg)](https://github.com/DavGarcia/use-normalized-keys/actions/workflows/ci.yml)
@@ -22,15 +22,30 @@ npm install use-normalized-keys
 ```
 
 ```jsx
-import { useNormalizedKeys } from 'use-normalized-keys';
+import { useNormalizedKeys, Keys } from 'use-normalized-keys';
 
-function App() {
-  const { lastEvent, pressedKeys, isKeyPressed } = useNormalizedKeys();
+function TextEditor() {
+  const keys = useNormalizedKeys();
+  
+  // Handle productivity shortcuts
+  React.useEffect(() => {
+    // Check for Ctrl+S (Save)
+    if (keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.s)) {
+      console.log('Save document');
+    }
+    
+    // Check for Ctrl+Z (Undo)
+    if (keys.activeModifiers.ctrl && keys.isKeyPressed(Keys.z)) {
+      console.log('Undo action');
+    }
+  }, [keys.isKeyPressed, keys.activeModifiers]);
   
   return (
     <div>
-      <p>Last key: {lastEvent?.key}</p>
-      <p>Pressed keys: {Array.from(pressedKeys).join(', ')}</p>
+      <textarea placeholder="Start typing..." />
+      <p>Last key: {keys.lastEvent?.key || 'None'}</p>
+      <p>Pressed keys: {keys.pressedKeys.size}</p>
+      <p>Ctrl held: {keys.activeModifiers.ctrl ? 'Yes' : 'No'}</p>
     </div>
   );
 }
@@ -72,6 +87,7 @@ npm run demo
 - `npm run test:watch` - Run tests in watch mode
 - `npm run test:coverage` - Run tests with coverage
 - `npm run demo` - Start the interactive demo
+- `npm run tools` - Start the drawing tools demo
 - `npm run dev` - Build in watch mode
 - `npm run clean` - Clean all build artifacts and node_modules
 - `npm run reinstall` - Clean and reinstall all dependencies
@@ -91,14 +107,14 @@ use-normalized-keys/
 
 ## 🎯 Features
 
-- ✅ **Normalized Key Values** - Consistent key values across browsers
-- ✅ **Cross-Browser Support** - Works reliably on Chrome, Firefox, Safari, Edge
-- ✅ **Platform Quirk Handling** - Handles Windows, macOS, and Linux differences
-- ✅ **Modifier Key Management** - Advanced tracking with tap vs hold detection
-- ✅ **Sequence Detection** - Detect key combinations, sequences, and chords
-- ✅ **Input Field Exclusion** - Automatically excludes or includes input fields
-- ✅ **Focus Loss Recovery** - Prevents stuck keys when window loses focus
-- ✅ **TypeScript Support** - Full type definitions included
+- ✅ **Professional Shortcuts** - Build keyboard-driven interfaces like Photoshop, Figma, VS Code
+- ✅ **Cross-Platform Reliability** - Consistent behavior on Windows, macOS, and Linux
+- ✅ **Browser Normalization** - Works perfectly across Chrome, Firefox, Safari, Edge
+- ✅ **Advanced Sequences** - Detect chords (Ctrl+S), sequences (jk), and hold patterns
+- ✅ **Smart Input Handling** - Automatically respects text fields and form inputs
+- ✅ **Accessibility Ready** - Focus management and keyboard navigation support  
+- ✅ **Performance Optimized** - 60fps animations with requestAnimationFrame
+- ✅ **TypeScript First** - Complete type definitions and excellent IntelliSense
 - ✅ **Zero Dependencies** - Only React as peer dependency
 
 ## 📖 Documentation
@@ -128,6 +144,6 @@ This project is licensed under the MIT License - see the [LICENSE](./packages/us
 
 ## 🙏 Acknowledgments
 
-- Inspired by the need for consistent keyboard handling in web games
-- Built with React hooks best practices
+- Inspired by the need for consistent keyboard handling in professional applications
+- Built with React hooks best practices  
 - Platform quirks research from various browser compatibility resources

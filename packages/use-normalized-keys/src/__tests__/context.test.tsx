@@ -99,11 +99,8 @@ describe('NormalizedKeysContext', () => {
         excludeInputFields: false,
         preventDefault: ['Ctrl+S', 'Ctrl+A'],
         enabled: undefined,
-        sequences: {
-          sequences,
-          onSequenceMatch,
-          debug: true
-        }
+        sequences,
+        onSequenceMatch
       });
     });
 

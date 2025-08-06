@@ -7,8 +7,8 @@ Experience the full power of useNormalizedKeys with our comprehensive interactiv
 The interactive demo showcases all features of useNormalizedKeys with a beautiful, responsive interface including:
 
 - 🎹 **Virtual Keyboard** - See keys light up as you type
-- 🎮 **Game Controls** - Test WASD movement and gaming features
-- 🔤 **Sequence Detection** - Try the Konami code and custom sequences
+- ⌨️ **Productivity Shortcuts** - Test common shortcuts and key combinations
+- 🔤 **Sequence Detection** - Try custom sequences and shortcut patterns
 - ⏱️ **Tap vs Hold** - Visualize timing with configurable thresholds
 - 🌐 **Platform Quirks** - Test Windows Shift+Numpad handling
 - 📊 **Real-time Metrics** - Performance monitoring and event logs
@@ -43,11 +43,11 @@ The interactive demo includes:
    - Modifier state indicators
    - Platform-specific quirk visualization
 
-2. **Game Control Testing**
-   - WASD movement visualization
-   - Character sprite that responds to input
-   - Running with Shift modifier
-   - Jump and special actions
+2. **Shortcut Testing**
+   - Productivity keyboard shortcuts
+   - Text editor commands (Ctrl+S, Ctrl+Z, etc.)
+   - Tool switching and navigation
+   - Multi-key combinations
 
 3. **Sequence Detection Playground**
    - Pre-configured sequences (Konami code, shortcuts)
@@ -57,7 +57,7 @@ The interactive demo includes:
 
 4. **Hold Detection Examples**
    - Visual hold progress bars
-   - Charge mechanics (jump, attack, etc.)
+   - Tool switching and mode changes
    - Custom hold duration configuration
    - Real-time progress tracking
 
@@ -130,11 +130,11 @@ function KeyboardTester() {
         gap: '10px' 
       }}>
         <div>
-          <h4>WASD Movement:</h4>
-          <div>W: {keys.isKeyPressed('w') ? '🟢' : '⚪'}</div>
-          <div>A: {keys.isKeyPressed('a') ? '🟢' : '⚪'}</div>
-          <div>S: {keys.isKeyPressed('s') ? '🟢' : '⚪'}</div>
-          <div>D: {keys.isKeyPressed('d') ? '🟢' : '⚪'}</div>
+          <h4>Shortcuts:</h4>
+          <div>Ctrl: {keys.activeModifiers.ctrl ? '🟢' : '⚪'}</div>
+          <div>Shift: {keys.activeModifiers.shift ? '🟢' : '⚪'}</div>
+          <div>Alt: {keys.activeModifiers.alt ? '🟢' : '⚪'}</div>
+          <div>Meta: {keys.activeModifiers.meta ? '🟢' : '⚪'}</div>
         </div>
         
         <div>
@@ -151,10 +151,10 @@ function App() {
   return (
     <NormalizedKeysProvider 
       sequences={[
-        holdSequence('charge-jump', ' ', 750, { name: 'Charge Jump' }),
-        comboSequence('konami', ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'], {
-          name: 'Konami Code',
-          timeout: 2000
+        holdSequence('brush-pressure', ' ', 750, { name: 'Brush Pressure' }),
+        comboSequence('vim-escape', ['j', 'k'], {
+          name: 'Vim Escape Sequence',
+          timeout: 300
         })
       ]}
       preventDefault={['F5', 'F12']} // Block refresh and dev tools
@@ -173,26 +173,27 @@ The demo showcases our unified API with Context Provider and the `useHoldSequenc
 ```tsx
 import { NormalizedKeysProvider, useHoldSequence, holdSequence } from 'use-normalized-keys';
 
-function ChargeAttackDemo() {
-  const chargeAttack = useHoldSequence('charge-attack');
+function BrushPressureDemo() {
+  const brushPressure = useHoldSequence('brush-pressure');
   
   return (
     <div style={{
-      transform: `scale(${chargeAttack.scale})`,
-      opacity: chargeAttack.opacity,
-      boxShadow: chargeAttack.glow > 0 ? `0 0 ${chargeAttack.glow * 30}px #ff6b35` : 'none',
-      marginLeft: `${chargeAttack.shake}px`,
+      transform: `scale(${1 + brushPressure.progress / 500})`,
+      opacity: 0.7 + brushPressure.progress / 300,
+      boxShadow: brushPressure.glow > 0 ? `0 0 ${brushPressure.glow * 20}px #3b82f6` : 'none',
       padding: '20px',
-      background: chargeAttack.isReady ? '#ff6b35' : '#333',
-      color: 'white',
+      background: brushPressure.isReady ? '#3b82f6' : '#f8fafc',
+      color: brushPressure.isReady ? 'white' : '#1e293b',
       borderRadius: '8px',
-      transition: 'background 0.3s'
+      border: '2px solid #e2e8f0',
+      transition: 'color 0.3s'
     }}>
-      <h3>Hold Space to Charge!</h3>
+      <h3>Hold Space for Brush Pressure</h3>
       <div>
-        {chargeAttack.isComplete ? '💥 READY!' : `Charging: ${Math.round(chargeAttack.progress)}%`}
+        {brushPressure.isComplete ? '🎨 Maximum Pressure!' : `Pressure: ${Math.round(brushPressure.progress)}%`}
       </div>
-      <div>Elapsed: {chargeAttack.elapsedTime}ms</div>
+      <div>Brush Size: {Math.round(10 + brushPressure.progress / 10)}px</div>
+      <div>Elapsed: {brushPressure.elapsedTime}ms</div>
     </div>
   );
 }
@@ -200,9 +201,9 @@ function ChargeAttackDemo() {
 function App() {
   return (
     <NormalizedKeysProvider 
-      sequences={[holdSequence('charge-attack', ' ', 1500, { name: 'Charge Attack' })]}
+      sequences={[holdSequence('brush-pressure', ' ', 1000, { name: 'Brush Pressure' })]}
     >
-      <ChargeAttackDemo />
+      <BrushPressureDemo />
     </NormalizedKeysProvider>
   );
 }

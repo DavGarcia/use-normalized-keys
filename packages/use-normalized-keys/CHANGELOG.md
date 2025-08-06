@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Old approach:**
 ```tsx
-const keys = useNormalizedKeys({ sequences: { sequences: [...] } });
+const keys = useNormalizedKeys({ sequences: [...] });
 const progress = useHoldProgress('ability');
 const animation = useHoldAnimation('ability');
 const sequence = useSequence('ability');
