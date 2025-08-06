@@ -378,7 +378,7 @@ function App() {
 ### Key Benefits of useHoldSequence
 
 - **🚀 60fps Smooth Animations**: Uses requestAnimationFrame for perfect visual effects
-- **⚡ Single Hook**: Replaces useHoldProgress + useHoldAnimation + useSequence
+- **⚡ Unified API**: Single hook with comprehensive functionality
 - **🎯 Real-time Properties**: Progress, timing, animation values, and event flags
 - **🎮 Game-Optimized**: Built for responsive game mechanics
 - **📊 Complete API**: Everything you need in one optimized hook
@@ -520,7 +520,7 @@ interface UseNormalizedKeysOptions {
 ```typescript
 // useHoldSequence - Unified hook combining all functionality
 interface UseHoldSequenceResult {
-  // Core Progress Data (from useHoldProgress functionality)
+  // Core Progress Data
   progress: number;              // Real-time progress (0-100)
   isHolding: boolean;           // Currently holding key
   isComplete: boolean;          // Hold completed
@@ -529,7 +529,7 @@ interface UseHoldSequenceResult {
   startTime: number | null;     // When hold started
   minHoldTime: number;          // Required hold duration
   
-  // Animation Properties (from useHoldAnimation functionality)
+  // Animation Properties
   scale: number;                // Scale multiplier (1.0-1.3)
   opacity: number;              // Opacity value (0.3-1.0) 
   glow: number;                 // Glow intensity (0-1)
@@ -538,7 +538,7 @@ interface UseHoldSequenceResult {
   isReady: boolean;             // At 90%+ progress
   isAnimating: boolean;         // Animation active
   
-  // Game Event Flags (from useSequence functionality) 
+  // Game Event Flags 
   justStarted: boolean;         // Just started (100ms window)
   justCompleted: boolean;       // Just completed (100ms window)
   justCancelled: boolean;       // Just cancelled (100ms window)
