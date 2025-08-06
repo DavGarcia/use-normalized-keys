@@ -207,25 +207,42 @@ type CurrentHolds = Map<string, HoldProgress>;
 ### Basic Usage
 
 ```tsx
-const keys = useNormalizedKeys();
+import { useNormalizedKeys } from 'use-normalized-keys';
+import { useEffect } from 'react';
 
-// Check the last event with detailed information
-console.log(keys.lastEvent?.key); // "a", "Enter", "ArrowUp", etc.
-console.log(keys.lastEvent?.duration); // Duration in ms for keyup events
-console.log(keys.lastEvent?.isTap); // true/false for tap vs hold
+function KeyboardHandler() {
+  const keys = useNormalizedKeys();
 
-// Check if a key is currently pressed
-if (keys.isKeyPressed('Space')) {
-  console.log('Spacebar is pressed!');
+  // React to keyboard events with useEffect
+  useEffect(() => {
+    if (keys.lastEvent?.type === 'keydown') {
+      console.log(`Key pressed: ${keys.lastEvent.key}`);
+    }
+    
+    if (keys.lastEvent?.type === 'keyup') {
+      console.log(`Key released: ${keys.lastEvent.key}`);
+      console.log(`Duration: ${keys.lastEvent.duration}ms`);
+      console.log(`Was ${keys.lastEvent.isTap ? 'tapped' : 'held'}`);
+    }
+  }, [keys.lastEvent]);
+
+  // Check if a key is currently pressed
+  const isSpacePressed = keys.isKeyPressed('Space');
+  
+  // Check modifier combinations
+  const isShiftA = keys.activeModifiers.shift && keys.isKeyPressed('a');
+  
+  // Get all pressed keys
+  const pressedKeysList = Array.from(keys.pressedKeys);
+
+  return (
+    <div>
+      <p>Space pressed: {isSpacePressed ? 'Yes' : 'No'}</p>
+      <p>Shift+A: {isShiftA ? 'Yes' : 'No'}</p>
+      <p>Active keys: {pressedKeysList.join(', ')}</p>
+    </div>
+  );
 }
-
-// Check modifier states
-if (keys.activeModifiers.shift && keys.isKeyPressed('a')) {
-  console.log('Shift+A combination!');
-}
-
-// Get all pressed keys
-console.log(Array.from(keys.pressedKeys)); // ["w", "Shift"]
 ```
 
 ### Advanced Configuration
@@ -240,6 +257,8 @@ const keys = useNormalizedKeys({
 ```
 
 ### Sequence Detection
+
+Detect complex key patterns like combos, chords, and hold sequences for advanced game mechanics and keyboard shortcuts.
 
 ```tsx
 const keys = useNormalizedKeys({
@@ -317,6 +336,8 @@ const keys = useNormalizedKeys({
 
 ### preventDefault API
 
+Selectively block browser default behaviors for specific key combinations or all keyboard events.
+
 ```tsx
 // Prevent default for all keys
 const keys1 = useNormalizedKeys({ preventDefault: true });
@@ -334,6 +355,8 @@ if (keys.lastEvent?.preventedDefault) {
 
 ### Tap vs Hold Detection
 
+Distinguish between quick key taps and longer holds based on configurable duration thresholds.
+
 ```tsx
 const keys = useNormalizedKeys({ tapHoldThreshold: 200 });
 
@@ -349,6 +372,8 @@ useEffect(() => {
 ```
 
 ### Game Input Handling
+
+Handle continuous input for game mechanics like WASD movement with automatic focus management and browser shortcut prevention.
 
 ```tsx
 function GameComponent() {
@@ -388,6 +413,8 @@ function GameComponent() {
 
 ### Disabled Hook
 
+Temporarily disable keyboard event processing while preserving hook state and configuration.
+
 ```tsx
 const [gameActive, setGameActive] = useState(true);
 const keys = useNormalizedKeys({ enabled: gameActive });
@@ -399,7 +426,7 @@ const keys = useNormalizedKeys({ enabled: gameActive });
 
 ### NormalizedKeysProvider
 
-The Context Provider simplifies setup and provides automatic state management for the unified hook architecture.
+The Context Provider simplifies setup and provides automatic state management for the unified hook architecture. **Required when using helper hooks like `useHoldSequence`.**
 
 #### Signature
 
@@ -446,7 +473,7 @@ function App() {
 
 ### useHoldSequence
 
-**NEW!** ⚡ The all-in-one unified hook that combines progress tracking, smooth 60fps animations, and game events into a single optimized hook. Replaces the need for separate `useHoldProgress`, `useHoldAnimation`, and `useSequence` hooks.
+The all-in-one unified hook that combines progress tracking, smooth 60fps animations, and game events into a single optimized hook.
 
 #### Signature
 
@@ -504,7 +531,7 @@ interface UseHoldSequenceResult {
 #### Key Benefits
 
 - **🚀 60fps Animations**: Uses requestAnimationFrame for perfectly smooth visual effects
-- **⚡ Single Hook**: Replaces useHoldProgress + useHoldAnimation + useSequence
+- **⚡ Single Hook**: Combines progress tracking, animation, and sequence detection
 - **🎯 Real-time Properties**: Progress, timing, animation values, and event flags
 - **🎮 Game-Optimized**: Built for responsive game mechanics
 - **📊 Complete API**: Everything you need in one optimized hook
