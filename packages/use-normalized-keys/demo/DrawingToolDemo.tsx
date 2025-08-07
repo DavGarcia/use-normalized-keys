@@ -270,6 +270,10 @@ function DrawingComponent() {
         <header className="demo-header">
           <h1>🎨 Drawing Tool Selection Demo</h1>
           <p>Professional keyboard shortcuts for creative applications</p>
+          <div className="demo-header-buttons">
+            <a href="https://davgarcia.github.io/use-normalized-keys/demo/" className="demo-link" target="_blank">🚀 Try Main Demo</a>
+            <a href="https://davgarcia.github.io/use-normalized-keys/" className="demo-link secondary">📖 Documentation</a>
+          </div>
         </header>
         
         <div className="demo-content">
@@ -365,7 +369,41 @@ export default function DrawingToolDemo() {
           .demo-header p {
             color: #64748b;
             font-size: 1.1rem;
-            margin: 0;
+            margin: 0 0 20px 0;
+          }
+          
+          .demo-header-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+          }
+          
+          .demo-link {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+          }
+          
+          .demo-link:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+          }
+          
+          .demo-link.secondary {
+            background: #f1f5f9;
+            color: #475569;
+          }
+          
+          .demo-link.secondary:hover {
+            background: #e2e8f0;
           }
           
           .demo-content {
