@@ -2,11 +2,12 @@
 
 Professional keyboard shortcuts for creative applications using useNormalizedKeys
 
-::: info Interactive Demo
-**[🚀 Try the Drawing Tools Demo →](https://davgarcia.github.io/use-normalized-keys/tools/)**
-
-Experience professional keyboard shortcuts for creative applications.
-:::
+<div style="text-align: center; margin: 2rem 0;">
+  <a href="https://davgarcia.github.io/use-normalized-keys/tools/" target="_blank"
+     style="display: inline-block; padding: 12px 24px; background-color: #3eaf7c; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
+    🚀 Try the Drawing Tools Demo
+  </a>
+</div>
 
 ## Overview
 
