@@ -15,7 +15,7 @@ The interactive demo showcases all features of useNormalizedKeys with a beautifu
 - 🎯 **preventDefault API** - Test browser shortcut blocking
 
 <div style="text-align: center; margin: 2rem 0;">
-  <a href="https://davgarcia.github.io/use-normalized-keys/demo/" 
+  <a href="https://davgarcia.github.io/use-normalized-keys/demo/" target="_blank"
      style="display: inline-block; padding: 12px 24px; background-color: #3eaf7c; color: white; text-decoration: none; border-radius: 4px; font-weight: 500;">
     🚀 Launch Interactive Demo
   </a>
