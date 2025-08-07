@@ -698,8 +698,9 @@ function checkChordMatches(state: SequenceState, now: number): MatchedSequence[]
 
 /**
  * Checks for hold pattern matches
+ * @internal - Exported for testing purposes only
  */
-function checkHoldMatches(
+export function checkHoldMatches(
   key: string, 
   duration: number, 
   state: SequenceState, 

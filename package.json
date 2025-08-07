@@ -2,6 +2,7 @@
   "name": "use-normalized-keys-monorepo",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Monorepo for use-normalized-keys React hook - professional keyboard input normalization for productivity applications",
   "author": "David Garcia <dgarcia182@gmail.com>",
   "license": "MIT",
