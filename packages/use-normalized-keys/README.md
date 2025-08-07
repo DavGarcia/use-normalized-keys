@@ -6,6 +6,8 @@
 
 A professional React hook for normalized keyboard input handling, designed for productivity applications, drawing tools, and professional interfaces.
 
+**📖 [USAGE.md](./USAGE.md) - Quick start guide for AI tools and developers**
+
 ## ✨ Features
 
 - **⚡ Professional Shortcuts** - Build keyboard-driven interfaces like Photoshop, Figma, VS Code

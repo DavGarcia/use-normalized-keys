@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "README.md",
+    "USAGE.md",
     "LICENSE",
     "CHANGELOG.md"
   ],
