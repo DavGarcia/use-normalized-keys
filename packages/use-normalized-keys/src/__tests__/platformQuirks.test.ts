@@ -1048,6 +1048,21 @@ describe('platformQuirks', () => {
       
       expect(result.warnings).toContain('Numpad code without numpad location');
     });
+
+    it('should warn about modifier keydown with inactive getModifierState', () => {
+      // Create a modifier keydown event where getModifierState reports inactive
+      const event = createKeyboardEvent('keydown', {
+        key: 'Shift',
+        code: 'ShiftLeft',
+      });
+      
+      // Mock getModifierState to report inactive for Shift
+      vi.spyOn(event, 'getModifierState').mockReturnValue(false);
+
+      const result = validateKeyEventConsistency(event, quirkState);
+      
+      expect(result.warnings).toContain('Shift keydown but getModifierState reports inactive');
+    });
   });
 
   describe('Dead code verification', () => {
@@ -1082,6 +1097,26 @@ describe('platformQuirks', () => {
       expect(quirkState.windowsShiftQuirks.recentEvents.length).toBe(0);
       expect(quirkState.macOSMetaTimeoutId).toBeNull();
     });
+
+    it('should clear buffered shift event timeout when present', () => {
+      // Set up a buffered shift event with timeout
+      const mockTimeoutId = 12345;
+      const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+      
+      quirkState.windowsShiftQuirks.bufferedShiftUp = {
+        event: createKeyboardEvent('keyup', { key: 'Shift', code: 'ShiftLeft' }),
+        timestamp: Date.now(),
+        timeoutId: mockTimeoutId
+      };
+
+      cleanupPlatformQuirks(quirkState);
+
+      // Verify clearTimeout was called and state was reset
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(mockTimeoutId);
+      expect(quirkState.windowsShiftQuirks.bufferedShiftUp).toBeNull();
+      
+      clearTimeoutSpy.mockRestore();
+    });
   });
 
   describe('getPlatformDebugInfo', () => {
@@ -1104,6 +1139,26 @@ describe('platformQuirks', () => {
       expect(debugInfo.quirks.windowsRecentEvents).toBe(1);
       // suspiciousKeys property should no longer exist
       expect(debugInfo.quirks).not.toHaveProperty('suspiciousKeys');
+    });
+
+    it('should truncate long userAgent strings with substring fallback', () => {
+      // Mock a very long userAgent string (>100 characters)
+      const longUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 EdgeHTML/18.18362'.repeat(3);
+      
+      const originalNavigator = global.navigator;
+      (global as any).navigator = {
+        platform: 'Win32',
+        userAgent: longUserAgent
+      };
+
+      const debugInfo = getPlatformDebugInfo(quirkState);
+
+      // Should be truncated at 100 characters with '...' appended
+      expect(debugInfo.platform.navigator.userAgent).toBe(longUserAgent.substring(0, 100) + '...');
+      expect(debugInfo.platform.navigator.userAgent.length).toBe(103); // 100 + '...'
+
+      // Restore
+      (global as any).navigator = originalNavigator;
     });
   });
 });

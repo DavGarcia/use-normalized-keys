@@ -217,6 +217,57 @@ describe('useHoldSequence - Unified Hook', () => {
       expect(result.current.matchCount).toBe(1);
       expect(result.current.lastMatch).toEqual(mockMatch);
     });
+
+    it('should track hold cancellation event history correctly', () => {
+      const mockUseNormalizedKeys = vi.mocked(useNormalizedKeysModule.useNormalizedKeys);
+      
+      // Initial state - no hold
+      const initialState = {
+        ...mockNormalizedKeyState,
+        currentHolds: new Map(),
+      };
+      mockUseNormalizedKeys.mockReturnValue(initialState);
+      
+      const { result, rerender } = renderHook(() => useHoldSequence('test-sequence'), {
+        wrapper: ({ children }) => (
+          <NormalizedKeysProvider>{children}</NormalizedKeysProvider>
+        ),
+      });
+
+      // Verify initial state
+      expect(result.current.eventHistory).toEqual([]);
+      expect(result.current.justCancelled).toBe(false);
+
+      // Start a hold (currentHold exists, previousHold is null)
+      const incompleteHold = createMockHoldProgress('test-sequence', 50, Date.now(), 1000, false);
+      const stateWithHold = {
+        ...mockNormalizedKeyState,
+        currentHolds: new Map([['test-sequence', incompleteHold]]),
+      };
+      mockUseNormalizedKeys.mockReturnValue(stateWithHold);
+      rerender();
+
+      // Hold should be active with 'started' event
+      expect(result.current.isHolding).toBe(true);
+      expect(result.current.eventHistory.length).toBe(1);
+      expect(result.current.eventHistory[0].type).toBe('started');
+
+      // Cancel the hold before completion (currentHold becomes null, previousHold exists and incomplete)
+      // This should trigger lines 121-125 in hooks.ts
+      const stateAfterCancellation = {
+        ...mockNormalizedKeyState,
+        currentHolds: new Map(), // Hold is removed (cancelled)
+      };
+      mockUseNormalizedKeys.mockReturnValue(stateAfterCancellation);
+      rerender();
+
+      // Verify cancellation was logged in event history
+      expect(result.current.isHolding).toBe(false);
+      expect(result.current.eventHistory.length).toBe(2);
+      expect(result.current.eventHistory[0].type).toBe('started');
+      expect(result.current.eventHistory[1].type).toBe('cancelled'); // This covers lines 121-125
+      expect(result.current.justCancelled).toBe(true);
+    });
   });
 
   describe('Comprehensive API Surface', () => {

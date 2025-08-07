@@ -13,7 +13,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
-        'dist/',
+        'dist*/',
         'demo/',
         '**/*.d.ts',
         '**/*.config.*',

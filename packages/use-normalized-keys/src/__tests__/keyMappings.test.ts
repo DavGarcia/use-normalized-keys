@@ -118,6 +118,27 @@ describe('keyMappings', () => {
       expect(normalizeKey(event)).toBe('End');
     });
 
+    it('should handle numpad operator keys with NumLock off (fallback to digit mapping)', () => {
+      // These operator keys don't have navigation equivalents, so they fall back to their digit mapping
+      const operatorKeyCodes = [
+        { code: 'NumpadAdd', key: '+', expected: '+' },
+        { code: 'NumpadSubtract', key: '-', expected: '-' },
+        { code: 'NumpadMultiply', key: '*', expected: '*' },
+        { code: 'NumpadDivide', key: '/', expected: '/' },
+        { code: 'NumpadEnter', key: 'Enter', expected: 'Enter' }
+      ];
+
+      operatorKeyCodes.forEach(({ code, key, expected }) => {
+        const event = createKeyboardEvent('keydown', {
+          key,
+          code,
+          modifierStates: { NumLock: false },
+        });
+        
+        expect(normalizeKey(event)).toBe(expected);
+      });
+    });
+
     it('should return original key if no normalization needed', () => {
       const event = createKeyboardEvent('keydown', { key: 'Enter' });
       expect(normalizeKey(event)).toBe('Enter');
