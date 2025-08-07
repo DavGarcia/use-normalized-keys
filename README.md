@@ -18,7 +18,7 @@ A professional React hook for normalized keyboard input handling, designed for p
 This monorepo contains:
 
 - **[packages/use-normalized-keys](./packages/use-normalized-keys)** - The React hook library
-- **docs** - Documentation site (coming soon)
+- **docs** - VitePress documentation site
 
 ## 🚀 Quick Start
 
@@ -125,7 +125,7 @@ use-normalized-keys/
 
 ## 📖 Documentation
 
-For detailed documentation, API reference, and examples, visit the [documentation site](https://davgarcia.github.io/use-normalized-keys/) (coming soon).
+For detailed documentation, API reference, and examples, visit the [documentation site](https://davgarcia.github.io/use-normalized-keys/).
 
 ## 🤝 Contributing
 
