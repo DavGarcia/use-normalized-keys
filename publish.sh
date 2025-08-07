@@ -8,9 +8,6 @@ set -e  # Exit on any error
 echo "🔍 Running tests..."
 npm run test
 
-echo "🏗️  Building package..."
-npm run build
-
 echo "📋 Package ready for publishing!"
 echo ""
 echo "Current version: $(node -p "require('./packages/use-normalized-keys/package.json').version")"
@@ -43,10 +40,18 @@ cd ../..
 git add packages/use-normalized-keys/package.json
 git commit -m "Bump version to $NEW_VERSION"
 
+echo "🏗️  Building package with new version..."
+npm run build
+
 echo "📋 New version: $NEW_VERSION"
 echo ""
 
-# Prompt for OTP
+echo "🚀 Publishing v$NEW_VERSION to npm..."
+
+# Change to package directory and publish with OTP
+cd packages/use-normalized-keys
+
+# Prompt for OTP right before publishing
 read -p "Enter your npm OTP (One-Time Password): " otp
 
 if [ -z "$otp" ]; then
@@ -54,12 +59,7 @@ if [ -z "$otp" ]; then
     exit 1
 fi
 
-echo ""
-echo "🚀 Publishing v$NEW_VERSION to npm..."
-
-# Change to package directory and publish with OTP
-cd packages/use-normalized-keys
-npm publish --otp="$otp"
+npm publish --ignore-scripts --otp="$otp"
 
 echo "✅ Published successfully!"
 
