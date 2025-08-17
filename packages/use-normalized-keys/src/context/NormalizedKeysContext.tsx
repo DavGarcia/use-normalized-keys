@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react';
+import type { ReactNode } from 'react';
 import { useNormalizedKeys } from '../index';
 import type { NormalizedKeyState, UseNormalizedKeysOptions } from '../index';
 import type { SequenceDefinition, MatchedSequence } from '../sequenceDetection';
@@ -101,7 +102,7 @@ export function NormalizedKeysProvider({
   excludeInputFields,
   tapHoldThreshold,
   preventDefault
-}: NormalizedKeysProviderProps): JSX.Element {
+}: NormalizedKeysProviderProps): ReactNode {
   // Create single instance of useNormalizedKeys
   const normalizedKeysState = useNormalizedKeys({
     enabled,

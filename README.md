@@ -98,6 +98,37 @@ npm run demo
 - `npm run clean` - Clean all build artifacts and node_modules
 - `npm run reinstall` - Clean and reinstall all dependencies
 
+### Publishing New Versions
+
+This project uses automated releases via GitHub Actions:
+
+1. **Update version and commit changes:**
+   ```bash
+   # In packages/use-normalized-keys/
+   npm version patch  # or minor/major
+   git add .
+   git commit -m "fix: Your descriptive commit message"
+   ```
+
+2. **Create and push git tag:**
+   ```bash
+   git tag v1.x.x  # Use the version from step 1
+   git push origin main --tags
+   ```
+
+3. **GitHub Actions handles the rest:**
+   - Runs all tests automatically
+   - Builds the library with production config
+   - Publishes to npm using stored NPM_TOKEN
+   - Creates GitHub release with changelog
+
+4. **Verify publication:**
+   - Check [GitHub Actions](https://github.com/DavGarcia/use-normalized-keys/actions) for workflow status
+   - Verify on [npm registry](https://www.npmjs.com/package/use-normalized-keys)
+   - Check [GitHub Releases](https://github.com/DavGarcia/use-normalized-keys/releases)
+
+> **Note:** Never run `npm publish` manually. The automated workflow ensures consistent builds and proper version management.
+
 ### Project Structure
 
 ```

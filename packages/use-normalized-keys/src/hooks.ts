@@ -82,7 +82,7 @@ export function useHoldSequence(sequenceId: string) {
   }>>([]);
   
   // Previous state tracking for event detection
-  const previousHoldRef = useRef<HoldProgress | undefined>();
+  const previousHoldRef = useRef<HoldProgress | undefined>(undefined);
   const previousMatchRef = useRef<number>(0);
 
   // Get current state
