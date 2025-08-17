@@ -100,34 +100,52 @@ npm run demo
 
 ### Publishing New Versions
 
-This project uses automated releases via GitHub Actions:
+This project uses automated releases via GitHub Actions with npm Trusted Publishing:
 
-1. **Update version and commit changes:**
+1. **Update all package versions:**
    ```bash
-   # In packages/use-normalized-keys/
+   # Update main package version
+   cd packages/use-normalized-keys/
    npm version patch  # or minor/major
-   git add .
-   git commit -m "fix: Your descriptive commit message"
+   
+   # Update root and docs package.json versions to match
+   # Edit package.json and docs/package.json manually
+   
+   # Update lockfile
+   cd ../..
+   npm install
    ```
 
-2. **Create and push git tag:**
+2. **Run quality checks:**
    ```bash
-   git tag v1.x.x  # Use the version from step 1
-   git push origin main --tags
+   npm test
+   npx tsc --noEmit
    ```
 
-3. **GitHub Actions handles the rest:**
+3. **Commit changes and create tag:**
+   ```bash
+   git add .
+   git commit -m "chore: bump version to v1.x.x"
+   git tag v1.x.x  # Use the version from step 1
+   ```
+
+4. **Push via GitHub Desktop:**
+   - Push commits to origin/main
+   - Push tags using **Repository → Push Tags** (or Ctrl+Shift+T)
+   - **Important:** Both commits AND tags must be pushed to trigger release
+
+5. **GitHub Actions handles the rest:**
    - Runs all tests automatically
    - Builds the library with production config
-   - Publishes to npm using stored NPM_TOKEN
+   - Publishes to npm using Trusted Publishing (no token needed)
    - Creates GitHub release with changelog
 
-4. **Verify publication:**
+6. **Verify publication:**
    - Check [GitHub Actions](https://github.com/DavGarcia/use-normalized-keys/actions) for workflow status
    - Verify on [npm registry](https://www.npmjs.com/package/use-normalized-keys)
    - Check [GitHub Releases](https://github.com/DavGarcia/use-normalized-keys/releases)
 
-> **Note:** Never run `npm publish` manually. The automated workflow ensures consistent builds and proper version management.
+> **Note:** Never run `npm publish` manually. The automated workflow ensures consistent builds and uses npm Trusted Publishing for security.
 
 ### Project Structure
 
