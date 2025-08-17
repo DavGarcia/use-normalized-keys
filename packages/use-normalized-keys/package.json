@@ -1,6 +1,6 @@
 {
   "name": "use-normalized-keys",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A React hook with unified API and 60fps animations for normalized keyboard input handling, designed for productivity applications, drawing tools, and professional interfaces",
   "type": "module",
   "main": "dist/index.umd.js",

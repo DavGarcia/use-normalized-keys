@@ -4,6 +4,9 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env.NODE_ENV': '"production"'
+  },
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
